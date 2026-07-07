@@ -1,0 +1,31 @@
+{{define "title"}}{{.ErrorTitle}}{{end}}
+{{define "description"}}Something went wrong.{{end}}
+{{define "robots"}}noindex, nofollow{{end}}
+{{define "bodyclass"}}error{{end}}
+{{define "head"}}<link rel="stylesheet" href="/static/css/app.css">{{end}}
+
+{{define "content"}}
+<div class="app-page">
+    {{template "site_nav" .}}
+
+    <main class="app-main">
+        <div class="app-container">
+            <div class="error-card">
+                <div class="big-icon">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <h1>{{.ErrorTitle}}</h1>
+                <div class="error-msg">{{.ErrorMessage}}</div>
+                <div class="error-actions">
+                    {{if .PrimaryCTA}}<a href="{{.PrimaryCTA.Href}}" class="btn btn-primary btn-large">{{.PrimaryCTA.Label}}</a>{{else}}<a href="/" class="btn btn-primary">{{T "error.back_home"}}</a>{{end}}
+                    {{if .ShowLogin}}<a href="{{.LangPrefix}}/login" class="btn btn-secondary">{{T "error.login"}}</a>{{end}}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    {{template "site_footer" .}}
+</div>
+
+<script src="/static/js/mobile-nav.js"></script>
+{{end}}

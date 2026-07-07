@@ -1,0 +1,35 @@
+**/node_modules
+**/test-results
+**/playwright-report
+
+# Binaries (anchored to repo root so cmd/ stays tracked)
+/app
+/qr-app
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go
+*.test
+*.out
+vendor/
+
+# PocketBase data
+pb_data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment — never commit real secrets; example.env is the template
+.env
+.env.*

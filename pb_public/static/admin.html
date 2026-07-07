@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Admin</title>
+<style>
+:root {
+  --bg: #FAF8F5;
+  --card: #FFFFFF;
+  --text: #2C2421;
+  --muted: #8A7E76;
+  --border: #E8E0D8;
+  --primary: #C0825E;
+  --primary-dark: #A06A48;
+  --error: #C4534A;
+  --warn: #B8893A;
+  --ok: #7A9E7E;
+  --shadow: 0 1px 3px rgba(44,36,33,.06);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+a { color: var(--primary-dark); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { font: inherit; cursor: pointer; }
+
+/* Login */
+.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+.login-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: 100%; max-width: 360px; box-shadow: var(--shadow); }
+.login-card h1 { margin: 0 0 4px; font-size: 20px; }
+.login-card p.sub { color: var(--muted); margin: 0 0 20px; font-size: 13px; }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+.field input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--text); font: inherit; }
+.field input:focus { outline: none; border-color: var(--primary); }
+.btn { display: inline-block; padding: 10px 16px; border: none; border-radius: 8px; background: var(--primary); color: #fff; font-weight: 500; }
+.btn:hover { background: var(--primary-dark); }
+.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn.ghost:hover { background: var(--bg); }
+.btn-full { width: 100%; }
+.err-msg { background: #FDECEA; color: var(--error); padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; }
+
+/* App shell */
+.shell { min-height: 100vh; display: flex; flex-direction: column; }
+.top {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; position: sticky; top: 0; z-index: 10;
+}
+.brand { font-weight: 600; font-size: 15px; margin-right: 12px; }
+.tabs { display: flex; gap: 2px; overflow-x: auto; flex: 1; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 8px 12px; border-radius: 6px; color: var(--muted);
+  white-space: nowrap; font-size: 14px; border: none; background: transparent;
+}
+.tab.active { background: var(--bg); color: var(--text); font-weight: 500; }
+.tab:hover { background: var(--bg); }
+.top .right { display: flex; gap: 6px; align-items: center; }
+.top .right a, .top .right button { font-size: 13px; padding: 6px 10px; }
+
+main { padding: 16px; max-width: 1280px; width: 100%; margin: 0 auto; }
+h2 { font-size: 18px; margin: 0 0 12px; }
+h3 { font-size: 15px; margin: 0 0 8px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 24px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; box-shadow: var(--shadow); }
+.kpi .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.kpi .value { font-size: 26px; font-weight: 600; margin-top: 4px; }
+.kpi .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* Cards / section */
+.section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; flex-wrap: wrap; }
+.section-head h3 { margin: 0; }
+.section-head .controls { display: flex; gap: 6px; flex-wrap: wrap; }
+.search { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit; background: #fff; min-width: 0; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+th { font-weight: 500; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; background: var(--bg); }
+tr:last-child td { border-bottom: none; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: var(--bg); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+
+/* Image grid */
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+.thumb {
+  background: var(--bg); border-radius: 6px; overflow: hidden;
+  aspect-ratio: 1 / 1; cursor: zoom-in; position: relative;
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .meta { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,.65)); color: #fff; font-size: 11px; padding: 16px 6px 4px; opacity: 0; transition: opacity .15s; }
+.thumb:hover .meta { opacity: 1; }
+
+/* Lightbox */
+.lightbox {
+  position: fixed; inset: 0; background: rgba(0,0,0,.88);
+  display: grid; place-items: center; padding: 20px;
+  z-index: 100;
+}
+.lightbox img { max-width: 100%; max-height: 80vh; border-radius: 6px; }
+.lightbox .info { color: #fff; margin-top: 12px; text-align: center; font-size: 13px; max-width: 600px; }
+.lightbox .info a { color: #fff; text-decoration: underline; }
+.lightbox .close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,.15); color: #fff; border: none; border-radius: 8px; padding: 8px 12px; }
+
+/* Errors */
+.log { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+.log .row { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.log .row:last-child { border-bottom: none; }
+.log .lvl { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-right: 8px; }
+.lvl-ERROR { background: #FDECEA; color: var(--error); }
+.lvl-WARN { background: #FDF4E0; color: var(--warn); }
+.lvl-INFO { background: var(--bg); color: var(--muted); }
+.log .ts { color: var(--muted); margin-right: 8px; }
+.log .data { color: var(--muted); margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--border); white-space: pre-wrap; word-break: break-word; }
+
+/* Pagination */
+.pager { display: flex; gap: 6px; justify-content: center; margin-top: 12px; align-items: center; font-size: 13px; }
+.pager button { padding: 6px 10px; border: 1px solid var(--border); background: #fff; border-radius: 6px; color: var(--text); }
+.pager button:disabled { opacity: .4; cursor: not-allowed; }
+.pager .info { color: var(--muted); }
+
+/* States */
+.empty, .loading { color: var(--muted); text-align: center; padding: 24px; font-size: 14px; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; box-shadow: var(--shadow); z-index: 200; }
+
+/* Mobile: collapse tables to cards */
+@media (max-width: 640px) {
+  main { padding: 12px; }
+  .top { padding: 8px 12px; }
+  .brand { display: none; }
+  .kpi .value { font-size: 22px; }
+  table.collapse thead { display: none; }
+  table.collapse tr { display: block; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  table.collapse tr:last-child { border-bottom: none; }
+  table.collapse td { display: flex; justify-content: space-between; padding: 4px 0; border: none; gap: 12px; }
+  table.collapse td::before { content: attr(data-label); color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  table.collapse td.full { display: block; }
+  table.collapse td.full::before { display: block; margin-bottom: 2px; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ===== Constants ===== */
+const API = '/api';
+const TOKEN_KEY = 'pcw_admin_token';
+const PAGE_SIZE = 50;
+const THUMB_PAGE = 60;
+// Must match the size registered on the uploads file fields in
+// migrations/13_add_upload_thumbs.go — an unlisted size serves the original.
+const GRID_THUMB = '480x480';
+const FILE_TOKEN_REFRESH_MS = 4 * 60 * 1000;
+
+/* ===== State ===== */
+let fileToken = null;
+let fileTokenTimer = null;
+let view = parseHash();
+let loginErr = '';
+const cache = {
+  events: new Map(),
+  users: new Map(),
+};
+
+/* ===== Token / API ===== */
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); fileToken = null; clearInterval(fileTokenTimer); }
+
+async function api(path, opts = {}) {
+  const headers = Object.assign({}, opts.headers || {});
+  const token = getToken();
+  if (token) headers['Authorization'] = token;
+  if (opts.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+  const res = await fetch(API + path, Object.assign({}, opts, { headers }));
+  if (res.status === 401) {
+    clearToken();
+    render();
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) {
+    let msg = 'HTTP ' + res.status;
+    try { const j = await res.json(); if (j.message) msg = j.message; } catch (_) {}
+    throw new Error(msg);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+async function refreshFileToken() {
+  try {
+    const r = await api('/files/token', { method: 'POST' });
+    fileToken = r.token;
+  } catch (e) { console.error('file token failed', e); }
+}
+
+function fileURL(collection, recordId, filename, thumb) {
+  if (!filename) return '';
+  const url = `/api/files/${encodeURIComponent(collection)}/${encodeURIComponent(recordId)}/${encodeURIComponent(filename)}`;
+  const q = [];
+  if (thumb) q.push('thumb=' + encodeURIComponent(thumb));
+  if (fileToken) q.push('token=' + encodeURIComponent(fileToken));
+  return q.length ? `${url}?${q.join('&')}` : url;
+}
+// Browser-renderable file for an upload: the JPEG `display` rendition when
+// present (HEIC uploads — the original can't be decoded by the browser or
+// thumbnailed server-side), otherwise the original `image`.
+function uploadFile(u) { return u.display || u.image; }
+
+/* ===== Hash routing ===== */
+function parseHash() {
+  const h = (location.hash || '#/').replace(/^#/, '');
+  const parts = h.split('/').filter(Boolean);
+  return { name: parts[0] || 'dashboard', arg: parts[1] || '' };
+}
+window.addEventListener('hashchange', () => { view = parseHash(); render(); });
+function go(path) { location.hash = '#' + path; }
+
+/* ===== DOM helpers ===== */
+function el(tag, attrs, children) {
+  const n = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    if (k === 'on') for (const ev in attrs.on) n.addEventListener(ev, attrs.on[ev]);
+    else if (k === 'class') n.className = attrs[k];
+    else if (k === 'html') n.innerHTML = attrs[k];
+    else if (k === 'dataset') for (const d in attrs.dataset) n.dataset[d] = attrs.dataset[d];
+    else if (attrs[k] !== undefined && attrs[k] !== null) n.setAttribute(k, attrs[k]);
+  }
+  if (children !== undefined) {
+    if (Array.isArray(children)) children.forEach(c => c && n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c));
+    else if (typeof children === 'string') n.textContent = children;
+    else n.appendChild(children);
+  }
+  return n;
+}
+function fmtDate(s) {
+  if (!s) return '';
+  const d = new Date(s);
+  if (isNaN(d)) return s;
+  return d.toLocaleString();
+}
+function relTime(s) {
+  if (!s) return '';
+  const d = new Date(s);
+  if (isNaN(d)) return s;
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return Math.floor(diff) + 's ago';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  if (diff < 7*86400) return Math.floor(diff/86400) + 'd ago';
+  return d.toLocaleDateString();
+}
+function bytes(n) {
+  if (!n) return '0 B';
+  const u = ['B','KB','MB','GB','TB'];
+  let i = 0;
+  while (n >= 1024 && i < u.length-1) { n /= 1024; i++; }
+  return n.toFixed(i === 0 ? 0 : 1) + ' ' + u[i];
+}
+function toast(msg) {
+  const t = el('div', { class: 'toast' }, msg);
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+/* ===== Login ===== */
+async function doLogin(email, password) {
+  const res = await fetch(API + '/collections/_superusers/auth-with-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identity: email, password })
+  });
+  if (!res.ok) throw new Error('Invalid credentials');
+  const data = await res.json();
+  setToken(data.token);
+  await refreshFileToken();
+  fileTokenTimer = setInterval(refreshFileToken, FILE_TOKEN_REFRESH_MS);
+}
+
+function renderLogin() {
+  const root = document.getElementById('app');
+  root.innerHTML = '';
+  const card = el('div', { class: 'login-card' });
+  card.appendChild(el('h1', null, 'Admin'));
+  card.appendChild(el('p', { class: 'sub' }, 'PocketBase superuser credentials.'));
+  if (loginErr) card.appendChild(el('div', { class: 'err-msg' }, loginErr));
+
+  const form = el('form');
+  const emailField = el('div', { class: 'field' });
+  emailField.appendChild(el('label', { for: 'login-email' }, 'Email'));
+  const emailInput = el('input', { type: 'email', id: 'login-email', name: 'email', required: '', autocomplete: 'username' });
+  emailField.appendChild(emailInput);
+  form.appendChild(emailField);
+
+  const pwField = el('div', { class: 'field' });
+  pwField.appendChild(el('label', { for: 'login-pw' }, 'Password'));
+  const pwInput = el('input', { type: 'password', id: 'login-pw', name: 'password', required: '', autocomplete: 'current-password' });
+  pwField.appendChild(pwInput);
+  form.appendChild(pwField);
+
+  const submit = el('button', { type: 'submit', class: 'btn btn-full' }, 'Sign in');
+  form.appendChild(submit);
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    submit.disabled = true;
+    submit.textContent = '…';
+    loginErr = '';
+    try {
+      await doLogin(emailInput.value, pwInput.value);
+      render();
+    } catch (err) {
+      loginErr = err.message || 'Login failed';
+      submit.disabled = false;
+      submit.textContent = 'Sign in';
+      renderLogin();
+    }
+  });
+  card.appendChild(form);
+  const wrap = el('div', { class: 'login-wrap' });
+  wrap.appendChild(card);
+  root.appendChild(wrap);
+}
+
+/* ===== Shell ===== */
+function renderShell() {
+  const root = document.getElementById('app');
+  root.innerHTML = '';
+  const shell = el('div', { class: 'shell' });
+
+  const top = el('div', { class: 'top' });
+  top.appendChild(el('span', { class: 'brand' }, 'Admin'));
+
+  const tabs = el('div', { class: 'tabs' });
+  const tabDefs = [
+    ['dashboard', 'Dashboard'],
+    ['events', 'Events'],
+    ['uploads', 'Uploads'],
+    ['users', 'Users'],
+    ['errors', 'Logs'],
+  ];
+  tabDefs.forEach(([key, label]) => {
+    const b = el('button', {
+      class: 'tab' + (view.name === key ? ' active' : ''),
+      on: { click: () => go('/' + key) }
+    }, label);
+    tabs.appendChild(b);
+  });
+  top.appendChild(tabs);
+
+  const right = el('div', { class: 'right' });
+  const pb = el('a', { href: '/_/', target: '_blank', class: 'btn ghost' }, 'PocketBase');
+  right.appendChild(pb);
+  const logout = el('button', { class: 'btn ghost', on: { click: () => { clearToken(); render(); } } }, 'Logout');
+  right.appendChild(logout);
+  top.appendChild(right);
+
+  shell.appendChild(top);
+
+  const main = el('main', { id: 'view' });
+  shell.appendChild(main);
+  root.appendChild(shell);
+
+  routeView(main);
+}
+
+function routeView(container) {
+  const v = view.name;
+  if (v === 'dashboard') return viewDashboard(container);
+  if (v === 'events' && view.arg) return viewEventDetail(container, view.arg);
+  if (v === 'events') return viewEvents(container);
+  if (v === 'uploads') return viewUploads(container);
+  if (v === 'users') return viewUsers(container);
+  if (v === 'errors') return viewErrors(container);
+  container.appendChild(el('div', { class: 'empty' }, 'Not found'));
+}
+
+/* ===== Shared loading + fetch helpers ===== */
+function withLoading(container, fn) {
+  container.innerHTML = '';
+  const l = el('div', { class: 'loading' }, 'Loading…');
+  container.appendChild(l);
+  fn().catch(err => {
+    container.innerHTML = '';
+    container.appendChild(el('div', { class: 'err-msg' }, err.message || 'Failed to load'));
+  });
+}
+
+async function listRecords(collection, opts = {}) {
+  const params = new URLSearchParams();
+  params.set('page', opts.page || 1);
+  params.set('perPage', opts.perPage || PAGE_SIZE);
+  if (opts.sort) params.set('sort', opts.sort);
+  if (opts.filter) params.set('filter', opts.filter);
+  if (opts.expand) params.set('expand', opts.expand);
+  if (opts.fields) params.set('fields', opts.fields);
+  if (opts.skipTotal) params.set('skipTotal', '1');
+  return api(`/collections/${collection}/records?` + params.toString());
+}
+
+async function getEvent(id) {
+  if (cache.events.has(id)) return cache.events.get(id);
+  try {
+    const r = await api(`/collections/events/records/${encodeURIComponent(id)}`);
+    cache.events.set(id, r);
+    return r;
+  } catch (e) { return null; }
+}
+async function getUser(id) {
+  if (cache.users.has(id)) return cache.users.get(id);
+  try {
+    const r = await api(`/collections/users/records/${encodeURIComponent(id)}`);
+    cache.users.set(id, r);
+    return r;
+  } catch (e) { return null; }
+}
+
+/* ===== Dashboard ===== */
+function viewDashboard(container) {
+  withLoading(container, async () => {
+    const [users, events, uploads, recentUploads] = await Promise.all([
+      listRecords('users', { perPage: 1 }),
+      listRecords('events', { perPage: 1 }),
+      listRecords('uploads', { perPage: 1 }),
+      listRecords('uploads', { perPage: 500, sort: '-created', fields: 'id,event,image,display,created,collectionId' }),
+    ]);
+
+    const since = Date.now() - 7 * 86400 * 1000;
+    const counts = {};
+    let storageBytes = 0;
+    recentUploads.items.forEach(u => {
+      if (new Date(u.created).getTime() >= since) counts[u.event] = (counts[u.event] || 0) + 1;
+    });
+    const top = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 10);
+    const topNames = await Promise.all(top.map(async ([cid]) => {
+      const c = await getEvent(cid);
+      return c ? c.title : cid;
+    }));
+
+    container.innerHTML = '';
+
+    container.appendChild(el('h2', null, 'Overview'));
+    const kpis = el('div', { class: 'kpis' });
+    kpis.appendChild(kpi('Users', users.totalItems));
+    kpis.appendChild(kpi('Events', events.totalItems));
+    kpis.appendChild(kpi('Uploads', uploads.totalItems));
+    kpis.appendChild(kpi('Uploads (7d)', Object.values(counts).reduce((a,b)=>a+b,0)));
+    container.appendChild(kpis);
+
+    /* Active leaderboard */
+    const lead = el('div', { class: 'section' });
+    lead.appendChild(el('div', { class: 'section-head' }, el('h3', null, 'Most active events — last 7 days')));
+    if (top.length === 0) {
+      lead.appendChild(el('div', { class: 'empty' }, 'No uploads in the last 7 days.'));
+    } else {
+      const wrap = el('div', { class: 'table-wrap' });
+      const t = el('table', { class: 'collapse' });
+      const thead = el('thead', null, el('tr', null, [
+        el('th', null, '#'),
+        el('th', null, 'Event'),
+        el('th', { class: 'num' }, 'Uploads (7d)'),
+      ]));
+      t.appendChild(thead);
+      const tb = el('tbody');
+      top.forEach(([cid, cnt], i) => {
+        const tr = el('tr', { class: 'click', on: { click: () => go('/events/' + cid) } });
+        tr.appendChild(el('td', { dataset: { label: '#' } }, String(i+1)));
+        tr.appendChild(el('td', { dataset: { label: 'Event' } }, topNames[i] || cid));
+        tr.appendChild(el('td', { class: 'num', dataset: { label: 'Uploads' } }, String(cnt)));
+        tb.appendChild(tr);
+      });
+      t.appendChild(tb);
+      wrap.appendChild(t);
+      lead.appendChild(wrap);
+    }
+    container.appendChild(lead);
+
+    /* Recent uploads */
+    const rec = el('div', { class: 'section' });
+    rec.appendChild(el('div', { class: 'section-head' }, [
+      el('h3', null, 'Recent uploads'),
+      el('div', { class: 'controls' }, el('a', { href: '#/uploads' }, 'View all →')),
+    ]));
+    const grid = el('div', { class: 'thumbs' });
+    const recent12 = recentUploads.items.slice(0, 12);
+    if (recent12.length === 0) {
+      rec.appendChild(el('div', { class: 'empty' }, 'No uploads yet.'));
+    } else {
+      recent12.forEach(u => grid.appendChild(thumb(u)));
+      rec.appendChild(grid);
+    }
+    container.appendChild(rec);
+  });
+}
+
+function kpi(label, value, sub) {
+  const k = el('div', { class: 'kpi' });
+  k.appendChild(el('div', { class: 'label' }, label));
+  k.appendChild(el('div', { class: 'value' }, String(value ?? 0)));
+  if (sub) k.appendChild(el('div', { class: 'sub' }, sub));
+  return k;
+}
+
+function thumb(upload) {
+  const t = el('div', { class: 'thumb', on: { click: () => openLightbox(upload) } });
+  const img = el('img', {
+    src: fileURL(upload.collectionId || 'uploads', upload.id, uploadFile(upload), GRID_THUMB),
+    alt: '',
+    loading: 'lazy',
+    decoding: 'async',
+  });
+  t.appendChild(img);
+  const meta = el('div', { class: 'meta' }, relTime(upload.created));
+  t.appendChild(meta);
+  return t;
+}
+
+/* ===== Lightbox ===== */
+async function openLightbox(upload) {
+  const lb = el('div', { class: 'lightbox', on: { click: (e) => { if (e.target === lb) lb.remove(); } } });
+  const close = el('button', { class: 'close', on: { click: () => lb.remove() } }, 'Close');
+  lb.appendChild(close);
+  const img = el('img', { src: fileURL(upload.collectionId || 'uploads', upload.id, uploadFile(upload)), alt: '', loading: 'lazy', decoding: 'async' });
+  lb.appendChild(img);
+  const info = el('div', { class: 'info' }, 'Loading metadata…');
+  lb.appendChild(info);
+  document.body.appendChild(lb);
+  const onKey = (e) => { if (e.key === 'Escape') { lb.remove(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
+
+  try {
+    const [event] = await Promise.all([ getEvent(upload.event) ]);
+    let promptText = '';
+    if (upload.prompt) {
+      try {
+        const p = await api(`/collections/prompts/records/${encodeURIComponent(upload.prompt)}`);
+        promptText = p.text || '';
+      } catch (_) {}
+    }
+    info.innerHTML = '';
+    const lines = [
+      event ? event.title : upload.event,
+      promptText,
+      fmtDate(upload.created),
+      upload.image,
+    ].filter(Boolean);
+    lines.forEach(l => { info.appendChild(el('div', null, l)); });
+    const link = el('div', null, el('a', { href: '#/events/' + upload.event, on: { click: () => lb.remove() } }, 'Open event →'));
+    info.appendChild(link);
+  } catch (e) {
+    info.textContent = 'Failed to load metadata: ' + e.message;
+  }
+}
+
+/* ===== Events list ===== */
+const eventsState = { page: 1, search: '' };
+function viewEvents(container) {
+  withLoading(container, async () => {
+    const filter = eventsState.search ? `title ~ ${JSON.stringify(eventsState.search)}` : '';
+    const data = await listRecords('events', { page: eventsState.page, sort: '-created', filter });
+
+    container.innerHTML = '';
+    const sec = el('div', { class: 'section' });
+    const head = el('div', { class: 'section-head' });
+    head.appendChild(el('h3', null, 'Events'));
+    const controls = el('div', { class: 'controls' });
+    const search = el('input', { class: 'search', type: 'search', placeholder: 'Search event name…', value: eventsState.search });
+    let t;
+    search.addEventListener('input', () => {
+      clearTimeout(t);
+      t = setTimeout(() => { eventsState.search = search.value.trim(); eventsState.page = 1; viewEvents(container); }, 250);
+    });
+    controls.appendChild(search);
+    head.appendChild(controls);
+    sec.appendChild(head);
+
+    if (data.items.length === 0) {
+      sec.appendChild(el('div', { class: 'empty' }, 'No events.'));
+    } else {
+      const owners = await Promise.all(data.items.map(c => getUser(c.owner)));
+      const counts = await Promise.all(data.items.map(c =>
+        listRecords('uploads', { perPage: 1, filter: `event = ${JSON.stringify(c.id)}` }).then(r => r.totalItems).catch(() => 0)
+      ));
+      const promptCounts = await Promise.all(data.items.map(c =>
+        listRecords('prompts', { perPage: 1, filter: `event = ${JSON.stringify(c.id)}` }).then(r => r.totalItems).catch(() => 0)
+      ));
+
+      const wrap = el('div', { class: 'table-wrap' });
+      const tbl = el('table', { class: 'collapse' });
+      tbl.appendChild(el('thead', null, el('tr', null, [
+        el('th', null, 'Event'),
+        el('th', null, 'Owner'),
+        el('th', null, 'Design'),
+        el('th', { class: 'num' }, 'Prompts'),
+        el('th', { class: 'num' }, 'Uploads'),
+        el('th', null, 'Created'),
+      ])));
+      const tb = el('tbody');
+      data.items.forEach((c, i) => {
+        const tr = el('tr', { class: 'click', on: { click: () => go('/events/' + c.id) } });
+        tr.appendChild(el('td', { dataset: { label: 'Event' } }, c.title || '—'));
+        tr.appendChild(el('td', { dataset: { label: 'Owner' } }, owners[i] ? owners[i].email : c.owner));
+        tr.appendChild(el('td', { dataset: { label: 'Design' } }, c.design_id || '—'));
+        tr.appendChild(el('td', { class: 'num', dataset: { label: 'Prompts' } }, String(promptCounts[i])));
+        tr.appendChild(el('td', { class: 'num', dataset: { label: 'Uploads' } }, String(counts[i])));
+        tr.appendChild(el('td', { dataset: { label: 'Created' } }, fmtDate(c.created)));
+        tb.appendChild(tr);
+      });
+      tbl.appendChild(tb);
+      wrap.appendChild(tbl);
+      sec.appendChild(wrap);
+      sec.appendChild(pager(data, (p) => { eventsState.page = p; viewEvents(container); }));
+    }
+    container.appendChild(sec);
+  });
+}
+
+function pager(data, onGo) {
+  const p = el('div', { class: 'pager' });
+  p.appendChild(el('button', {
+    on: { click: () => onGo(data.page - 1) }, disabled: data.page <= 1 ? '' : undefined
+  }, '←'));
+  p.appendChild(el('span', { class: 'info' }, `Page ${data.page} of ${data.totalPages} · ${data.totalItems} total`));
+  p.appendChild(el('button', {
+    on: { click: () => onGo(data.page + 1) }, disabled: data.page >= data.totalPages ? '' : undefined
+  }, '→'));
+  if (data.page <= 1) p.querySelectorAll('button')[0].disabled = true;
+  if (data.page >= data.totalPages) p.querySelectorAll('button')[1].disabled = true;
+  return p;
+}
+
+/* ===== Event detail ===== */
+function viewEventDetail(container, id) {
+  withLoading(container, async () => {
+    const [event, prompts, uploads] = await Promise.all([
+      getEvent(id),
+      listRecords('prompts', { perPage: 500, sort: 'sort_order', filter: `event = ${JSON.stringify(id)}` }),
+      listRecords('uploads', { perPage: 500, sort: '-created', filter: `event = ${JSON.stringify(id)}` }),
+    ]);
+
+    if (!event) {
+      container.innerHTML = '';
+      container.appendChild(el('div', { class: 'err-msg' }, 'Event not found'));
+      return;
+    }
+    const owner = await getUser(event.owner);
+
+    container.innerHTML = '';
+    container.appendChild(el('p', null, el('a', { href: '#/events' }, '← Back to events')));
+    container.appendChild(el('h2', null, event.title || '(unnamed)'));
+
+    const meta = el('div', { class: 'section' });
+    const dl = el('div');
+    const addRow = (k, v) => { const r = el('div'); r.style.display = 'flex'; r.style.justifyContent = 'space-between'; r.style.padding = '4px 0'; r.appendChild(el('span', { class: 'mono' }, k)); r.appendChild(el('span', null, v || '—')); dl.appendChild(r); };
+    addRow('ID', event.id);
+    addRow('Owner', owner ? owner.email : event.owner);
+    addRow('Design', event.design_id);
+    addRow('Created', fmtDate(event.created));
+    addRow('Updated', fmtDate(event.updated));
+    addRow('Prompts', String(prompts.items.length));
+    addRow('Uploads', String(uploads.items.length));
+    meta.appendChild(dl);
+    container.appendChild(meta);
+
+    /* Prompts */
+    const ps = el('div', { class: 'section' });
+    ps.appendChild(el('div', { class: 'section-head' }, el('h3', null, 'Prompts')));
+    if (prompts.items.length === 0) {
+      ps.appendChild(el('div', { class: 'empty' }, 'No prompts.'));
+    } else {
+      const wrap = el('div', { class: 'table-wrap' });
+      const tbl = el('table', { class: 'collapse' });
+      tbl.appendChild(el('thead', null, el('tr', null, [el('th', null, '#'), el('th', null, 'Text'), el('th', { class: 'num' }, 'Uploads')])));
+      const byPrompt = {};
+      uploads.items.forEach(u => byPrompt[u.prompt] = (byPrompt[u.prompt] || 0) + 1);
+      const tb = el('tbody');
+      prompts.items.forEach(p => {
+        const tr = el('tr');
+        tr.appendChild(el('td', { dataset: { label: '#' } }, String((p.sort_order ?? 0))));
+        tr.appendChild(el('td', { dataset: { label: 'Text' } }, p.text || ''));
+        tr.appendChild(el('td', { class: 'num', dataset: { label: 'Uploads' } }, String(byPrompt[p.id] || 0)));
+        tb.appendChild(tr);
+      });
+      tbl.appendChild(tb);
+      wrap.appendChild(tbl);
+      ps.appendChild(wrap);
+    }
+    container.appendChild(ps);
+
+    /* Uploads */
+    const us = el('div', { class: 'section' });
+    us.appendChild(el('div', { class: 'section-head' }, el('h3', null, `Uploads (${uploads.items.length})`)));
+    if (uploads.items.length === 0) {
+      us.appendChild(el('div', { class: 'empty' }, 'No uploads yet.'));
+    } else {
+      const grid = el('div', { class: 'thumbs' });
+      uploads.items.forEach(u => grid.appendChild(thumb(u)));
+      us.appendChild(grid);
+    }
+    container.appendChild(us);
+  });
+}
+
+/* ===== Uploads grid ===== */
+const uploadsState = { page: 1 };
+function viewUploads(container) {
+  withLoading(container, async () => {
+    const data = await listRecords('uploads', { page: uploadsState.page, perPage: THUMB_PAGE, sort: '-created' });
+    container.innerHTML = '';
+    const sec = el('div', { class: 'section' });
+    sec.appendChild(el('div', { class: 'section-head' }, [
+      el('h3', null, 'All uploads'),
+      el('div', { class: 'controls' }, el('span', { class: 'info' }, `${data.totalItems} total`)),
+    ]));
+    if (data.items.length === 0) {
+      sec.appendChild(el('div', { class: 'empty' }, 'No uploads.'));
+    } else {
+      const grid = el('div', { class: 'thumbs' });
+      data.items.forEach(u => grid.appendChild(thumb(u)));
+      sec.appendChild(grid);
+      sec.appendChild(pager(data, (p) => { uploadsState.page = p; viewUploads(container); }));
+    }
+    container.appendChild(sec);
+  });
+}
+
+/* ===== Users ===== */
+const usersState = { page: 1, search: '' };
+function viewUsers(container) {
+  withLoading(container, async () => {
+    const filter = usersState.search ? `email ~ ${JSON.stringify(usersState.search)}` : '';
+    const data = await listRecords('users', { page: usersState.page, sort: '-created', filter });
+
+    container.innerHTML = '';
+    const sec = el('div', { class: 'section' });
+    const head = el('div', { class: 'section-head' });
+    head.appendChild(el('h3', null, 'Users'));
+    const controls = el('div', { class: 'controls' });
+    const search = el('input', { class: 'search', type: 'search', placeholder: 'Search email…', value: usersState.search });
+    let t;
+    search.addEventListener('input', () => {
+      clearTimeout(t);
+      t = setTimeout(() => { usersState.search = search.value.trim(); usersState.page = 1; viewUsers(container); }, 250);
+    });
+    controls.appendChild(search);
+    head.appendChild(controls);
+    sec.appendChild(head);
+
+    if (data.items.length === 0) {
+      sec.appendChild(el('div', { class: 'empty' }, 'No users.'));
+    } else {
+      const eventCounts = await Promise.all(data.items.map(u =>
+        listRecords('events', { perPage: 1, filter: `owner = ${JSON.stringify(u.id)}` }).then(r => r.totalItems).catch(() => 0)
+      ));
+
+      const wrap = el('div', { class: 'table-wrap' });
+      const tbl = el('table', { class: 'collapse' });
+      tbl.appendChild(el('thead', null, el('tr', null, [
+        el('th', null, 'Email'),
+        el('th', null, 'Name'),
+        el('th', null, 'Tier'),
+        el('th', { class: 'num' }, 'Events'),
+        el('th', null, 'Created'),
+      ])));
+      const tb = el('tbody');
+      data.items.forEach((u, i) => {
+        const tr = el('tr');
+        tr.appendChild(el('td', { dataset: { label: 'Email' } }, u.email || ''));
+        tr.appendChild(el('td', { dataset: { label: 'Name' } }, u.name || '—'));
+        tr.appendChild(el('td', { dataset: { label: 'Tier' } }, u.tier || 'free'));
+        tr.appendChild(el('td', { class: 'num', dataset: { label: 'Events' } }, String(eventCounts[i])));
+        tr.appendChild(el('td', { dataset: { label: 'Created' } }, fmtDate(u.created)));
+        tb.appendChild(tr);
+      });
+      tbl.appendChild(tb);
+      wrap.appendChild(tbl);
+      sec.appendChild(wrap);
+      sec.appendChild(pager(data, (p) => { usersState.page = p; viewUsers(container); }));
+    }
+    container.appendChild(sec);
+  });
+}
+
+/* ===== Logs ===== */
+// PocketBase log levels: -4 DEBUG, 0 INFO, 4 WARN, 8 ERROR. Default to INFO so
+// the request-log telemetry is visible (a healthy app has no WARN+ entries, so
+// defaulting higher makes a working Logs tab look empty/broken).
+const LOG_LEVELS = [['8', 'Errors only'], ['4', 'Warnings & errors'], ['0', 'All activity (info+)']];
+const errorsState = { page: 1, levelMin: 0 };
+function viewErrors(container) {
+  withLoading(container, async () => {
+    const filter = `level >= ${errorsState.levelMin}`;
+    let data;
+    try {
+      const params = new URLSearchParams({ page: errorsState.page, perPage: 50, sort: '-created', filter });
+      data = await api('/logs?' + params.toString());
+    } catch (e) {
+      container.innerHTML = '';
+      container.appendChild(el('div', { class: 'err-msg' }, 'Could not load logs: ' + e.message + '. Enable application logging in PocketBase settings (Logs → set "Max days retention" above 0) to populate this.'));
+      return;
+    }
+    container.innerHTML = '';
+    const sec = el('div', { class: 'section' });
+    const head = el('div', { class: 'section-head' });
+    const levelLabel = (LOG_LEVELS.find(([v]) => String(errorsState.levelMin) === v) || [, 'Logs'])[1];
+    head.appendChild(el('h3', null, levelLabel));
+    const controls = el('div', { class: 'controls' });
+    const sel = el('select', { class: 'search' });
+    LOG_LEVELS.forEach(([v, l]) => {
+      const o = el('option', { value: v }, l);
+      if (String(errorsState.levelMin) === v) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', () => { errorsState.levelMin = parseInt(sel.value, 10); errorsState.page = 1; viewErrors(container); });
+    controls.appendChild(sel);
+    head.appendChild(controls);
+    sec.appendChild(head);
+
+    if (data.items.length === 0) {
+      sec.appendChild(el('div', { class: 'empty' }, errorsState.levelMin > 0 ? 'No entries at this level — nothing to worry about. Switch to “All activity” to see request logs.' : 'No log entries yet.'));
+    } else {
+      const log = el('div', { class: 'log' });
+      data.items.forEach(row => {
+        const r = el('div', { class: 'row' });
+        const lvl = row.level >= 8 ? 'ERROR' : row.level >= 4 ? 'WARN' : 'INFO';
+        const header = el('div');
+        header.appendChild(el('span', { class: 'lvl lvl-' + lvl }, lvl));
+        header.appendChild(el('span', { class: 'ts' }, fmtDate(row.created)));
+        header.appendChild(document.createTextNode(row.message || ''));
+        r.appendChild(header);
+        if (row.data && Object.keys(row.data).length) {
+          r.appendChild(el('div', { class: 'data' }, JSON.stringify(row.data, null, 2)));
+        }
+        log.appendChild(r);
+      });
+      sec.appendChild(log);
+      sec.appendChild(pager(data, (p) => { errorsState.page = p; viewErrors(container); }));
+    }
+    container.appendChild(sec);
+  });
+}
+
+/* ===== Top-level render ===== */
+function render() {
+  if (!getToken()) { renderLogin(); return; }
+  renderShell();
+}
+
+/* ===== Init ===== */
+(async function init() {
+  if (getToken()) {
+    // Validate token by fetching file token; if invalid, clear and show login.
+    try {
+      await refreshFileToken();
+      fileTokenTimer = setInterval(refreshFileToken, FILE_TOKEN_REFRESH_MS);
+    } catch (e) { clearToken(); }
+  }
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# Pre-domain config: serve the app over plain HTTP on port 80.
+# Switch to the example.com block in DEPLOY.md once DNS is set.
+
+:80 {
+	reverse_proxy app:8090
+	encode zstd gzip
+}
+
+# Once DNS A record `example.com` → <your-server-ip> is live,
+# replace the `:80` block above with the block below and run:
+#   docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+#
+# example.com {
+#     reverse_proxy app:8090
+#     encode zstd gzip
+# }
+#
+# www.example.com {
+#     redir https://example.com{uri} permanent
+# }
+#
+# Staging (see "Staging" in DEPLOY.md). Behind basic auth so crawlers and
+# stray guests never see it; the Lemon Squeezy webhook path is exempt so
+# test-mode webhooks can get through. Generate the hash with:
+#   docker compose exec caddy caddy hash-password
+#
+# staging.example.com {
+#     @protected not path /webhook/*
+#     basic_auth @protected {
+#         staging <bcrypt-hash>
+#     }
+#     header X-Robots-Tag "noindex, nofollow"
+#     reverse_proxy app-staging:8090
+#     encode zstd gzip
+# }

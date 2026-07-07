@@ -1,0 +1,74 @@
+{{define "title"}}{{T "gallery.title"}}{{end}}
+{{define "description"}}{{T "gallery.meta_description"}}{{end}}
+{{define "robots"}}noindex, nofollow{{end}}
+{{define "bodyclass"}}gallery{{end}}
+{{define "head"}}<link rel="stylesheet" href="/static/css/app.css">{{end}}
+
+{{define "content"}}
+<div class="app-page">
+    {{template "site_nav" .}}
+
+    <main class="app-main">
+        <div class="app-container">
+            <a href="{{.LangPrefix}}/overview/{{.Event.Id}}" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                {{T "gallery.back"}}
+            </a>
+
+            <header class="app-header">
+                <span class="eyebrow">{{T "gallery.eyebrow"}}</span>
+                <h1>{{.Event.GetString "title"}}</h1>
+            </header>
+
+            {{if .HasUploads}}
+            <div class="app-actions-bar">
+                <a href="{{.LangPrefix}}/download/{{.Event.Id}}" class="btn btn-primary" data-ph-event="gallery_zip_downloaded" data-ph-prop-event="{{.Event.Id}}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    {{T "gallery.download_all"}}
+                </a>
+            </div>
+            {{end}}
+
+            {{if .Items}}
+            <div class="gallery-grid">
+                {{range .Items}}
+                <div class="gallery-item">
+                    {{if .ImageURL}}
+                    <span class="photo">
+                        <img src="/api/files/{{.ImageURL}}" alt="{{.PromptText}}" loading="lazy">
+                        {{if .UploadID}}
+                        <form class="photo-delete" method="post" action="{{$.LangPrefix}}/upload/{{.UploadID}}/delete" onsubmit="return confirm('{{T "gallery.delete_confirm"}}');">
+                            <button type="submit" class="photo-delete-btn" title="{{T "gallery.delete"}}" aria-label="{{T "gallery.delete"}}">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            </button>
+                        </form>
+                        {{end}}
+                    </span>
+                    {{else}}
+                    <span class="photo">
+                        <div class="photo-empty">
+                            <span>{{T "gallery.no_photo_yet"}}</span>
+                        </div>
+                    </span>
+                    {{end}}
+                    <div class="caption">
+                        {{.PromptText}}
+                        {{if .GuestName}}<span class="caption-author">{{T "gallery.submitted_by"}} {{.GuestName}}</span>{{end}}
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{else}}
+            <div class="empty-state">
+                <h3>{{T "gallery.empty.title"}}</h3>
+                <p>{{T "gallery.empty.body"}}</p>
+            </div>
+            {{end}}
+        </div>
+    </main>
+
+    {{template "site_footer" .}}
+</div>
+
+<script src="/static/js/mobile-nav.js"></script>
+{{end}}

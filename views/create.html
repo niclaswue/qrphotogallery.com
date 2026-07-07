@@ -1,0 +1,175 @@
+{{define "title"}}{{if .EditMode}}{{T "edit.title"}}{{else}}{{T "create.title"}}{{end}}{{end}}
+
+{{define "description"}}{{T "create.meta_description"}}{{end}}
+
+{{define "robots"}}{{if .EditMode}}noindex, nofollow{{else}}index, follow{{end}}{{end}}
+
+{{define "bodyclass"}}create{{end}}
+
+{{define "head"}}
+<link rel="stylesheet" href="/static/css/landing.css">
+<link rel="stylesheet" href="/static/css/create.css">
+{{end}}
+
+{{define "content"}}
+<div class="create-page">
+
+    {{template "site_nav" .}}
+
+    <div class="creator-layout">
+        <div class="creator-main">
+            {{if .EditMode}}
+            <a href="{{.LangPrefix}}/overview/{{.EventID}}" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                {{T "edit.cancel"}}
+            </a>
+            {{end}}
+            <form id="creatorForm" method="post" action="{{if .FormAction}}{{.FormAction}}{{else}}/create{{end}}" novalidate data-ph-event="{{if .EditMode}}event_edited{{else}}event_created{{end}}">
+
+                <div class="section">
+                    <h1>{{if .EditMode}}{{T "edit.heading"}}{{else}}{{T "create.hero_title"}}{{end}}</h1>
+                    <p class="text-muted mt-1">{{T "create.hero_subtitle"}}</p>
+                </div>
+
+                <div class="section">
+                    <h2>{{T "create.event.title"}}</h2>
+                    <label class="field-label" for="eventTitle">{{T "create.event.name_label"}}</label>
+                    <input type="text" id="eventTitle" name="title" required maxlength="120"
+                        placeholder="{{T "create.event.name_placeholder"}}" value="{{.EventTitle}}">
+
+                    <label class="field-label" for="eventDate" style="margin-top:16px">{{T "create.event.date_label"}}</label>
+                    <div class="date-input-wrap">
+                        <svg class="date-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <input type="date" id="eventDate" name="event_date" value="{{.EventDate}}">
+                    </div>
+                    <p class="text-muted" style="font-size:0.8125rem; margin-top:6px">{{T "create.event.date_hint"}}</p>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h2>{{T "create.prompts.title"}}</h2>
+                        <span class="badge" id="questionCount">0</span>
+                        <span class="limit-hint text-muted" id="limitHint"></span>
+                    </div>
+                    <p class="text-muted mt-1 mb-3">{{T "create.prompts.subtitle"}}</p>
+
+                    <div id="questionList" class="question-list" aria-live="polite"></div>
+                    <p class="text-muted" id="emptyHint" style="font-size:0.875rem">{{T "create.prompts.empty"}}</p>
+
+                    <div class="add-custom" style="margin-top:12px">
+                        <input type="text" id="customQuestion" placeholder="{{T "create.prompts.custom_placeholder"}}" maxlength="120">
+                        <button type="button" class="btn btn-secondary" id="addCustomBtn">{{T "create.prompts.add_btn"}}</button>
+                    </div>
+                    <p class="text-muted" style="font-size:0.75rem; margin-top:4px; text-align:right;" id="customQuestionCount" aria-live="polite"></p>
+                    <div id="limitWarning" class="form-warning" role="alert" aria-live="assertive">
+                        <svg class="form-warning-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <div class="form-warning-body">
+                            <p class="form-warning-title" id="limitWarningTitle"></p>
+                            <a class="form-warning-cta" id="limitWarningCta" href="{{.LangPrefix}}/pricing" hidden>
+                                {{T "create.limit.upgrade_link"}}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px">
+                        <h3 style="font-size:1rem">{{T "create.starters.title"}}</h3>
+                        <p class="text-muted mt-1 mb-3" style="font-size:0.875rem">{{T "create.starters.subtitle"}}</p>
+                        <div class="idea-list" id="starterList">
+                            <div class="idea-item" data-text="{{T "create.starters.p1"}}"><span class="idea-text">{{T "create.starters.p1"}}</span><span class="idea-add">+</span></div>
+                            <div class="idea-item" data-text="{{T "create.starters.p2"}}"><span class="idea-text">{{T "create.starters.p2"}}</span><span class="idea-add">+</span></div>
+                            <div class="idea-item" data-text="{{T "create.starters.p3"}}"><span class="idea-text">{{T "create.starters.p3"}}</span><span class="idea-add">+</span></div>
+                            <div class="idea-item" data-text="{{T "create.starters.p4"}}"><span class="idea-text">{{T "create.starters.p4"}}</span><span class="idea-add">+</span></div>
+                            <div class="idea-item" data-text="{{T "create.starters.p5"}}"><span class="idea-text">{{T "create.starters.p5"}}</span><span class="idea-add">+</span></div>
+                            <div class="idea-item" data-text="{{T "create.starters.p6"}}"><span class="idea-text">{{T "create.starters.p6"}}</span><span class="idea-add">+</span></div>
+                            <div class="idea-item" data-text="{{T "create.starters.p7"}}"><span class="idea-text">{{T "create.starters.p7"}}</span><span class="idea-add">+</span></div>
+                            <div class="idea-item" data-text="{{T "create.starters.p8"}}"><span class="idea-text">{{T "create.starters.p8"}}</span><span class="idea-add">+</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                {{if not .EditMode}}
+                <div class="section">
+                    <h2>{{T "create.design.title"}}</h2>
+                    <p class="text-muted mt-1 mb-3">{{T "create.design.subtitle"}}</p>
+                    <div class="mode-options">
+                        {{range $i, $d := .Designs}}
+                        <label class="mode-option" data-ph-event="design_selected" data-ph-prop-design="{{$d.ID}}" data-ph-prop-source="create">
+                            <input type="radio" name="design_id" value="{{$d.ID}}" {{if $.CurrentDesignID}}{{if eq $d.ID $.CurrentDesignID}}checked{{end}}{{else if eq $i 0}}checked{{end}}>
+                            <span class="mode-option-body">
+                                <span class="design-chip-swatches">
+                                    <span class="swatch" style="background:{{$d.Primary}}"></span>
+                                    <span class="swatch" style="background:{{$d.Accent}}"></span>
+                                    <span class="swatch" style="background:{{$d.Background}}"></span>
+                                </span>
+                                <span class="mode-option-title">{{$d.Name}}</span>
+                                <span class="mode-option-hint">{{$d.Description}}</span>
+                            </span>
+                        </label>
+                        {{end}}
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>{{T "create.qr_mode.title"}}</h2>
+                    <p class="text-muted mt-1 mb-3">{{T "create.qr_mode.subtitle"}}</p>
+                    <div class="mode-options">
+                        <label class="mode-option" data-ph-event="qr_mode_selected" data-ph-prop-mode="cards" data-ph-prop-source="create">
+                            <input type="radio" name="qr_mode" value="cards" {{if ne .QRMode "single"}}checked{{end}}>
+                            <span class="mode-option-body">
+                                <span class="mode-option-title">{{T "create.qr_mode.option_cards"}}</span>
+                                <span class="mode-option-hint">{{T "create.qr_mode.option_cards_hint"}}</span>
+                            </span>
+                        </label>
+                        <label class="mode-option" data-ph-event="qr_mode_selected" data-ph-prop-mode="single" data-ph-prop-source="create">
+                            <input type="radio" name="qr_mode" value="single" {{if eq .QRMode "single"}}checked{{end}}>
+                            <span class="mode-option-body">
+                                <span class="mode-option-title">{{T "create.qr_mode.option_single"}}</span>
+                                <span class="mode-option-hint">{{T "create.qr_mode.option_single_hint"}}</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                {{end}}
+
+                <input type="hidden" name="prompts" id="promptsField" value="">
+                <input type="hidden" name="prompts_json" id="promptsJsonField" value="">
+
+                <div class="action-buttons mt-3" style="display:flex;flex-direction:column;gap:12px;align-items:stretch">
+                    <button type="submit" class="btn btn-primary btn-large" id="saveBtn">
+                        {{if .EditMode}}{{T "edit.save_btn"}}{{else}}{{T "create.actions.next"}}{{end}}
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
+                    {{if not .EditMode}}
+                    <p class="text-muted" style="text-align:center;font-size:0.8125rem">{{T "create.actions.note"}}</p>
+                    {{end}}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{template "site_footer" .}}
+
+</div>
+
+<script>
+    window.__createConfig = {
+        maxPrompts: {{.MaxPrompts}},
+        initialPrompts: {{.InitialPromptsJSON}},
+        initialPromptIds: {{if .InitialPromptIDsJSON}}{{.InitialPromptIDsJSON}}{{else}}[]{{end}},
+        isAuth: {{if .Auth}}true{{else}}false{{end}},
+        editMode: {{if .EditMode}}true{{else}}false{{end}},
+        strings: {
+            counter: {{T "create.limit.counter"}},
+            warning: {{T "create.limit.warning"}},
+            empty: {{T "create.prompts.empty"}},
+            removeLabel: {{T "create.prompts.remove_label"}},
+            errorEventName: {{T "create.errors.event_name"}},
+            errorPromptsEmpty: {{T "create.errors.prompts_empty"}},
+            errorPromptsTooMany: {{T "create.errors.prompts_too_many"}}
+        }
+    };
+</script>
+<script src="/static/js/mobile-nav.js"></script>
+<script src="/static/js/create.js"></script>
+{{end}}

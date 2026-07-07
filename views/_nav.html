@@ -1,0 +1,66 @@
+{{define "site_nav"}}
+<nav class="site-nav">
+    <div class="container-wide">
+        <div class="nav-inner">
+            <a href="{{.LangPrefix}}/" class="logo">
+                <span class="logo-mark">{{.AppName}}</span>
+            </a>
+            <div class="nav-actions">
+                <a href="{{.LangPrefix}}/pricing" class="nav-link">{{T "nav.pricing"}}</a>
+                {{if .Auth}}
+                <a href="{{.LangPrefix}}/overview" class="nav-link">{{T "nav.account"}}</a>
+                <a href="{{.LangPrefix}}/logout" class="btn btn-secondary btn-nav">{{T "nav.logout"}}</a>
+                {{else}}
+                <a href="{{.LangPrefix}}/login" class="nav-link nav-link-login">{{T "nav.login"}}</a>
+                <a href="{{.LangPrefix}}/register" class="btn btn-primary btn-nav">{{T "nav.signup"}}</a>
+                {{end}}
+                {{/* Guest QR pages follow the event's language; the site-wide
+                     picker (and its site-preference cookie) doesn't apply there. */}}
+                {{if not .GuestPage}}{{template "lang_switcher" .}}{{end}}
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label='{{T "nav.menu"}}' aria-expanded="false">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="nav-mobile-overlay" id="navMobileOverlay"></div>
+<div class="nav-mobile" id="navMobile">
+    <button class="nav-mobile-close" id="navMobileClose" aria-label='{{T "nav.close_menu"}}'>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <nav>
+        <a href="{{.LangPrefix}}/pricing" class="nav-mobile-link">{{T "nav.pricing"}}</a>
+        {{if .Auth}}
+        <a href="{{.LangPrefix}}/overview" class="nav-mobile-link">{{T "nav.account"}}</a>
+        <a href="{{.LangPrefix}}/logout" class="nav-mobile-link">{{T "nav.logout"}}</a>
+        {{else}}
+        <a href="{{.LangPrefix}}/login" class="nav-mobile-link">{{T "nav.login"}}</a>
+        <a href="{{.LangPrefix}}/register" class="btn btn-primary">{{T "nav.signup"}}</a>
+        {{end}}
+        {{if not .GuestPage}}<div class="nav-mobile-lang">{{template "lang_switcher" .}}</div>{{end}}
+    </nav>
+</div>
+{{end}}
+
+{{define "lang_switcher"}}
+<div class="lang-switcher" data-lang-switcher>
+    <button type="button" class="lang-current" aria-haspopup="true" aria-expanded="false" aria-label='{{T "nav.language"}}'>
+        <img src="/static/img/flags/{{.Lang}}.svg" alt="" class="lang-flag" aria-hidden="true" onerror="this.style.display='none'">
+        <span class="lang-current-code">{{.Lang | upper}}</span>
+        <svg class="lang-caret" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <ul class="lang-dropdown" role="menu">
+        {{range .LangSwitchOptions}}<li role="none"><a role="menuitem"
+            href="{{.Path}}"
+            class="lang-option{{if eq .Lang $.Lang}} active{{end}}"
+            hreflang="{{.Lang}}"
+            lang="{{.Lang}}"
+            data-lang="{{.Lang}}">
+            <img src="/static/img/flags/{{.Lang}}.svg" alt="{{.Name}}" class="lang-flag" onerror="this.style.display='none'">
+            <span>{{.Name}}</span>
+        </a></li>{{end}}
+    </ul>
+</div>
+{{end}}

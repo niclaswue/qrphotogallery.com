@@ -1,0 +1,67 @@
+{{define "title"}}{{T "login.title"}}{{end}}
+
+{{define "description"}}{{T "login.meta_description"}}{{end}}
+
+{{define "robots"}}noindex, nofollow{{end}}
+
+{{define "bodyclass"}}login{{end}}
+
+{{define "head"}}
+<link rel="stylesheet" href="/static/css/auth.css">
+{{end}}
+
+{{define "content"}}
+<div class="auth-page">
+
+    {{template "site_nav" .}}
+
+    {{/* ===== Auth Card ===== */}}
+    <main class="auth-main">
+        <div class="auth-card">
+            <h1>{{T "login.heading"}}</h1>
+
+            {{if eq .Error "invalid"}}
+            <p class="auth-error">{{T "login.error.invalid"}}</p>
+            {{else if eq .Error "google_failed"}}
+            <p class="auth-error">{{T "login.error.google_failed"}}</p>
+            {{else if eq .Error "google_unverified"}}
+            <p class="auth-error">{{T "login.error.google_unverified"}}</p>
+            {{else if eq .Error "google_unavailable"}}
+            <p class="auth-error">{{T "login.error.google_unavailable"}}</p>
+            {{end}}
+            {{if eq .Notice "reset_sent"}}
+            <p class="auth-notice">{{T "login.notice.reset_sent"}}</p>
+            {{end}}
+
+            {{if .GoogleAuth}}
+            <a class="btn-oauth btn-block" href="{{.LangPrefix}}/auth/google{{if .Redirect}}?redirect={{.Redirect}}{{end}}" data-ph-event="login_google_attempt">
+                <svg class="btn-oauth-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 262" aria-hidden="true"><path fill="#4285f4" d="M255.9 133.5c0-10.8-.9-18.6-2.8-26.7H130.6v48.4h71.9a64 64 0 0 1-26.7 42.4l-.2 1.6 38.7 30 2.7.3c24.7-22.8 38.9-56.3 38.9-96"/><path fill="#34a853" d="M130.6 261.1c35.2 0 64.8-11.6 86.4-31.6l-41.2-32a76 76 0 0 1-45.2 13.1 79 79 0 0 1-74.3-54.2l-1.5.1-40.3 31.2-.6 1.5A131 131 0 0 0 130.6 261"/><path fill="#fbbc05" d="M56.3 156.4a80 80 0 0 1-.2-51.7V103L15.3 71.3l-1.4.6a131 131 0 0 0 0 117.3z"/><path fill="#eb4335" d="M130.6 50.5c24.5 0 41 10.6 50.4 19.4L218 34c-22.8-21-52.2-34-87.4-34C79.5 0 35.4 29.3 13.9 72l42.2 32.7a79 79 0 0 1 74.5-54.2"/></svg>
+                <span>{{T "auth.google_btn"}}</span>
+            </a>
+            <div class="auth-divider"><span>{{T "auth.or"}}</span></div>
+            {{end}}
+
+            <form method="POST" action="{{.LangPrefix}}/login" data-ph-event="login_attempt">
+                {{if .Redirect}}<input type="hidden" name="redirect" value="{{.Redirect}}">{{end}}
+                <div class="field">
+                    <label class="field-label" for="email">{{T "login.email_label"}}</label>
+                    <input type="email" id="email" name="identity" required autocomplete="email">
+                </div>
+                <div class="field">
+                    <label class="field-label" for="password">{{T "login.password_label"}}</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-large">{{T "login.submit_btn"}}</button>
+            </form>
+
+            <p class="auth-sub"><a href="{{.LangPrefix}}/forgot-password">{{T "login.forgot_password_link"}}</a></p>
+            <p class="auth-sub">{{T "login.no_account"}} <a href="{{.LangPrefix}}/register{{if .Redirect}}?redirect={{.Redirect}}{{end}}">{{T "login.signup_link"}}</a></p>
+        </div>
+    </main>
+
+    {{template "site_footer" .}}
+
+</div>
+
+<script src="/static/js/mobile-nav.js"></script>
+{{end}}

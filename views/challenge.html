@@ -1,0 +1,90 @@
+{{define "title"}}{{T "challenge.title"}}{{end}}
+{{define "description"}}{{T "challenge.meta_description"}}{{end}}
+{{define "robots"}}noindex, nofollow{{end}}
+{{define "bodyclass"}}challenge{{end}}
+{{define "head"}}<link rel="stylesheet" href="/static/css/app.css">
+<link rel="stylesheet" href="/static/css/challenge.css">{{end}}
+
+{{define "content"}}
+<div class="upload-page reveal-page">
+    {{template "site_nav" .}}
+    
+
+    <main class="upload-wrap">
+        {{if .Event}}
+        <div class="reveal-card">
+            <div class="reveal-eyebrow reveal-stagger" style="color:{{.Design.Primary}}">{{T "challenge.your_challenge"}}</div>
+            <div class="event-name reveal-stagger">{{.Event.GetString "title"}}</div>
+
+            <div class="reveal-prompt reveal-stagger" style="border-color:{{.Design.Primary}}">
+                <span class="reveal-spark" style="background:{{.Design.Accent}}" aria-hidden="true"></span>
+                <p class="reveal-prompt-text" style="color:{{.Design.Text}}">{{.PromptText}}</p>
+            </div>
+
+            {{if .ErrorKey}}
+            <div class="upload-error reveal-stagger" role="alert">{{T .ErrorKey}}</div>
+            {{end}}
+
+            <form action="{{.LangPrefix}}/e/{{.Event.Id}}/{{.PromptID}}" method="POST" enctype="multipart/form-data" id="upload-form" class="reveal-stagger"
+                  data-ph-event="photo_uploaded" data-ph-prop-event="{{.Event.Id}}" data-ph-prop-prompt="{{.PromptID}}"
+                  data-err-bad-format="{{T "upload.error.bad_format"}}"
+                  data-err-too-large="{{T "upload.error.too_large"}}"
+                  data-err-no-file="{{T "upload.error.no_file"}}"
+                  data-err-name="{{T "upload.error.name_required"}}">
+                <input type="hidden" name="mode" value="qr">
+                <div class="picker" id="picker">
+                    <button type="button" class="picker-tile" id="tile-camera">
+                        <span class="picker-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+                        <span class="picker-label">{{T "upload.take_photo"}}</span>
+                    </button>
+                    <label class="picker-tile" id="tile-gallery" for="photo">
+                        <span class="picker-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></span>
+                        <span class="picker-label">{{T "upload.choose_gallery"}}</span>
+                    </label>
+                </div>
+                <div class="dz-preview-wrap" id="dz-preview-wrap" hidden>
+                    <img class="dz-preview" id="dz-preview" alt="">
+                    <span class="dz-filename" id="dz-filename"></span>
+                </div>
+                <input type="file" id="photo" name="image" accept="image/*,.heic,.heif,.HEIC,.HEIF" style="display:none">
+                {{if .CollectName}}
+                <div class="guest-name-field">
+                    <label for="guest-name">{{T "upload.name_label"}}</label>
+                    <input type="text" id="guest-name" name="guest_name" maxlength="60" required
+                           autocomplete="name" value="{{.GuestName}}" placeholder="{{T "upload.name_placeholder"}}">
+                </div>
+                {{end}}
+                <div class="upload-error" id="client-error" role="alert" hidden></div>
+                <div class="upload-actions">
+                    <button type="button" class="btn btn-secondary btn-block" id="change-photo" hidden>
+                        {{T "upload.preview.choose_another"}}
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-large btn-block" id="submit-btn">
+                        {{T "upload.submit"}}
+                    </button>
+                </div>
+            </form>
+
+            <div class="reveal-actions reveal-stagger">
+                <a class="btn btn-ghost btn-block" href="{{.LangPrefix}}/e/{{.Event.Id}}?next=1"
+                   data-ph-event="single_qr_next" data-ph-prop-event="{{.Event.Id}}">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    {{T "challenge.get_another"}}
+                </a>
+            </div>
+
+            <p class="upload-foot reveal-stagger">
+                <a href="{{.LangPrefix}}/e/{{.Event.Id}}/library">{{T "challenge.browse"}}</a>
+            </p>
+        </div>
+        {{else}}
+        <div class="empty-state">
+            <h3>{{T "upload.not_found"}}</h3>
+        </div>
+        {{end}}
+    </main>
+</div>
+
+<script src="/static/js/mobile-nav.js"></script>
+<script src="/static/js/upload.js"></script>
+{{end}}

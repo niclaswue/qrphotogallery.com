@@ -1,0 +1,155 @@
+name: qr-app
+
+# Production stack. Rename the project (`name:`) and every qr-app-*
+# container per business so several stacks can share one VPS.
+#
+# Layout:
+#   app        — the Go/PocketBase service, image pulled from GHCR.
+#   caddy      — TLS-terminating reverse proxy. Reads ./Caddyfile.
+#   watchtower — polls the registry every 60s and restarts `app` on a new image.
+#                Scoped via labels so it only ever updates the app, never itself
+#                or caddy. Uses ~/.docker/config.json for private GHCR pulls.
+#   backup     — nightly tar.gz of pb_data uploaded to S3 (offen image).
+#
+# All persistent state lives in named volumes. Editing this file does NOT need
+# a re-pull; only `docker compose up -d` to apply.
+
+services:
+  app:
+    image: ${APP_IMAGE:-ghcr.io/OWNER/REPO:latest}
+    container_name: qr-app
+    restart: unless-stopped
+    expose:
+      - "8090"
+    volumes:
+      - pb_data:/app/pb_data
+      - ./config.json:/app/config.json:ro
+    env_file:
+      - .env
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8090/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Staging instance at staging.<your-domain> — see "Staging" in DEPLOY.md.
+  # The image is built directly on the server from the dev checkout
+  # (no registry, no watchtower). The `staging` profile keeps it out of plain
+  # `docker compose up -d` / `pull` / `ps`; target it explicitly:
+  #   docker compose up -d app-staging
+  app-staging:
+    image: qr-app:staging
+    container_name: qr-app-staging
+    profiles: ["staging"]
+    pull_policy: never
+    restart: unless-stopped
+    expose:
+      - "8090"
+    volumes:
+      - pb_data_staging:/app/pb_data
+      - ./config.staging.json:/app/config.json:ro
+    env_file:
+      - .env.staging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8090/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: qr-app-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Active fork — containrrr/watchtower has been unmaintained since Nov 2023.
+  # Pinned to minor 1.16 for predictable rolling patch updates.
+  watchtower:
+    image: nickfedor/watchtower:1.16
+    container_name: qr-app-watchtower
+    restart: unless-stopped
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_POLL_INTERVAL: "60"
+      WATCHTOWER_INCLUDE_RESTARTING: "true"
+      # Rolling restart disabled: nickfedor/watchtower 1.16 refuses it when
+      # any watched container has depends_on (caddy → app). Batch restart is
+      # fine at this scale — the stack is down for ~2s on app updates.
+      WATCHTOWER_ROLLING_RESTART: "false"
+      # Docker 25+ dropped legacy API 1.24/1.25 that watchtower defaults to.
+      DOCKER_API_VERSION: "1.44"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.docker/config.json:/config.json:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nightly tar.gz of pb_data → S3.
+  # Reads BACKUP_* vars from .env. If BACKUP_S3_BUCKET is empty, the container
+  # will fail to start — that is by design: deploy without backups is a footgun.
+  backup:
+    image: offen/docker-volume-backup:v2
+    container_name: qr-app-backup
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      BACKUP_CRON_EXPRESSION: "0 3 * * *"
+      BACKUP_FILENAME: "qr-app-pb_data-%Y-%m-%dT%H-%M-%S.tar.gz"
+      BACKUP_RETENTION_DAYS: "30"
+      BACKUP_PRUNING_PREFIX: "qr-app-pb_data-"
+      AWS_S3_BUCKET_NAME: ${BACKUP_S3_BUCKET}
+      AWS_S3_PATH: ${BACKUP_S3_PATH:-qr-app}
+      AWS_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY}
+      AWS_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      AWS_DEFAULT_REGION: ${BACKUP_S3_REGION:-eu-central-1}
+    volumes:
+      - pb_data:/backup/pb_data:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pb_data:
+  pb_data_staging:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,194 @@
+{{define "title"}}{{T "pricing.title"}}{{end}}
+
+{{define "description"}}{{T "pricing.meta_description"}}{{end}}
+
+{{define "bodyclass"}}pricing{{end}}
+
+{{define "head"}}
+<link rel="stylesheet" href="/static/css/landing.css">
+<link rel="stylesheet" href="/static/css/pricing.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "{{T "pricing.faq.q1"}}", "acceptedAnswer": {"@type": "Answer", "text": "{{T "pricing.faq.a1"}}"}},
+    {"@type": "Question", "name": "{{T "pricing.faq.q2"}}", "acceptedAnswer": {"@type": "Answer", "text": "{{T "pricing.faq.a2"}}"}},
+    {"@type": "Question", "name": "{{T "pricing.faq.q5"}}", "acceptedAnswer": {"@type": "Answer", "text": "{{T "pricing.faq.a5"}}"}},
+    {"@type": "Question", "name": "{{T "pricing.faq.q6"}}", "acceptedAnswer": {"@type": "Answer", "text": "{{T "pricing.faq.a6"}}"}}
+  ]
+}
+</script>
+{{end}}
+
+{{define "content"}}
+<div class="pricing-page">
+
+    {{template "site_nav" .}}
+
+    {{/* ===== Hero ===== */}}
+    <section class="pricing-hero">
+        <div class="container">
+            <div class="section-label">{{T "pricing.title"}}</div>
+            <h1>{{T "pricing.hero_title"}}</h1>
+            <p class="pricing-subtitle">{{T "pricing.hero_subtitle"}}</p>
+            <ul class="pricing-trust">
+                <li>{{T "pricing.trust_one_time"}}</li>
+                <li>{{T "pricing.trust_no_app"}}</li>
+                <li>{{T "pricing.trust_refund"}}</li>
+            </ul>
+        </div>
+    </section>
+
+    {{/* ===== Pricing cards ===== */}}
+    {{$current := ""}}{{if .UserTier}}{{$current = .UserTier.Name}}{{end}}
+    {{/*
+        Each paid card carries its alternate prices in data-* attributes.
+        pricing-flags.js reads the two PostHog feature flags
+        ("pricing-higher" / "pricing-lower") and, when enabled, swaps the
+        displayed price and appends ?variant=<name> to the checkout link.
+        With both flags off (or no pricing_variants configured) the defaults
+        render through.
+    */}}
+    {{$variantStandardHigher := ""}}{{$variantStandardLower := ""}}
+    {{$variantPremiumHigher := ""}}{{$variantPremiumLower := ""}}
+    {{range .PricingVariants}}
+        {{if eq .Name "higher"}}{{$variantStandardHigher = .Standard}}{{$variantPremiumHigher = .Premium}}{{end}}
+        {{if eq .Name "lower"}}{{$variantStandardLower = .Standard}}{{$variantPremiumLower = .Premium}}{{end}}
+    {{end}}
+
+    <section class="pricing-cards">
+        <div class="container-wide">
+            <div class="pricing-grid">
+
+                {{/* --- Free --- */}}
+                <div class="price-card{{if eq $current "free"}} is-current{{end}}">
+                    <div class="price-card-header">
+                        <h3>{{T "pricing.free_name"}}</h3>
+                        <div class="price">{{.FreePrice}}</div>
+                        <div class="price-note">{{T "pricing.free_note"}}</div>
+                        {{if eq $current "free"}}<div class="current-plan-tag">{{T "pricing.current_plan"}}</div>{{end}}
+                    </div>
+                    <ul class="price-features">
+                        <li>{{printf (T "pricing.free_f1") .FreePromptLimit}}</li>
+                        <li>{{T "pricing.free_f_qr"}}</li>
+                        <li>{{T "pricing.free_f_quality"}}</li>
+                        <li class="is-muted">{{T "pricing.free_f_single_photo"}}</li>
+                        <li class="is-muted">{{T "pricing.free_f_no_guest_zip"}}</li>
+                        <li class="is-muted">{{T "pricing.free_f_no_qr_download"}}</li>
+                    </ul>
+                    <a href="{{.LangPrefix}}/create" class="btn btn-secondary btn-block">{{T "pricing.free_cta"}}</a>
+                </div>
+
+                {{/* --- Standard (popular tier) --- */}}
+                <div class="price-card price-card-featured{{if eq $current "standard"}} is-current{{end}}"
+                     data-plan="standard"
+                     data-price-default="{{.StandardPrice}}"
+                     data-price-higher="{{$variantStandardHigher}}"
+                     data-price-lower="{{$variantStandardLower}}">
+                    <div class="price-badge">{{T "pricing.premium_badge"}}</div>
+                    <div class="price-card-header">
+                        <h3>{{T "pricing.standard_name"}}</h3>
+                        <div class="price-stack">
+                            <span class="price" data-price-target>{{.StandardPrice}}</span>
+                        </div>
+                        <div class="price-note">{{T "pricing.standard_note"}}</div>
+                        {{if eq $current "standard"}}<div class="current-plan-tag">{{T "pricing.current_plan"}}</div>{{end}}
+                    </div>
+                    <ul class="price-features">
+                        <li class="is-highlight">{{T "pricing.feature_multi_photo"}}</li>
+                        <li class="is-highlight">{{T "pricing.feature_guest_zip"}}</li>
+                        <li class="is-highlight">{{T "pricing.feature_qr_download"}}</li>
+                        <li>{{printf (T "pricing.standard_f_prompts") .StandardPromptLimit}}</li>
+                        <li>{{T "pricing.feature_best_quality"}}</li>
+                        <li>{{T "pricing.feature_storage_six"}}</li>
+                        <li>{{T "pricing.feature_priority_support"}}</li>
+                    </ul>
+                    {{if eq $current "standard"}}
+                    <a href="{{.LangPrefix}}/overview" class="btn btn-primary btn-block btn-large">{{T "pricing.manage_plan"}}</a>
+                    {{else}}
+                    <a href="{{.LangPrefix}}/payment?plan=standard" class="btn btn-primary btn-block btn-large" data-checkout-link>{{T "pricing.standard_cta"}}</a>
+                    {{end}}
+                </div>
+
+                {{/* --- Premium --- */}}
+                <div class="price-card{{if eq $current "premium"}} is-current{{end}}"
+                     data-plan="premium"
+                     data-price-default="{{.PremiumPrice}}"
+                     data-price-higher="{{$variantPremiumHigher}}"
+                     data-price-lower="{{$variantPremiumLower}}">
+                    <div class="price-card-header">
+                        <h3>{{T "pricing.premium_name"}}</h3>
+                        <div class="price-stack">
+                            <span class="price" data-price-target>{{.PremiumPrice}}</span>
+                        </div>
+                        <div class="price-note">{{T "pricing.premium_note"}}</div>
+                        {{if eq $current "premium"}}<div class="current-plan-tag">{{T "pricing.current_plan"}}</div>{{end}}
+                    </div>
+                    <ul class="price-features">
+                        <li class="price-features-intro">{{T "pricing.premium_everything"}}</li>
+                        <li class="is-highlight"><strong>{{printf (T "pricing.premium_f_prompts") .PremiumPromptLimit}}</strong></li>
+                        <li class="is-highlight">{{T "pricing.feature_storage_twelve"}}</li>
+                    </ul>
+                    {{if eq $current "premium"}}
+                    <a href="{{.LangPrefix}}/overview" class="btn btn-secondary btn-block">{{T "pricing.manage_plan"}}</a>
+                    {{else}}
+                    <a href="{{.LangPrefix}}/payment?plan=premium" class="btn btn-secondary btn-block" data-checkout-link>{{T "pricing.premium_cta"}}</a>
+                    {{end}}
+                </div>
+
+            </div>
+
+            {{/* ===== Support callout ===== */}}
+            <div class="pricing-support">
+                <div class="pricing-support-text">
+                    <h3>{{T "pricing.support_title"}}</h3>
+                    <p>{{T "pricing.support_body"}}</p>
+                </div>
+                <a class="btn btn-primary" href="mailto:{{.SupportEmail}}" data-ph-event="support_email_click">
+                    {{T "pricing.support_cta"}}
+                </a>
+            </div>
+        </div>
+    </section>
+
+    {{/* ===== FAQ ===== */}}
+    <section class="faq-section">
+        <div class="container">
+            <h2>{{T "pricing.faq_title"}}</h2>
+            <div class="faq-list">
+                <details class="faq-item">
+                    <summary>{{T "pricing.faq.q1"}}</summary>
+                    <p>{{T "pricing.faq.a1"}}</p>
+                </details>
+                <details class="faq-item">
+                    <summary>{{T "pricing.faq.q2"}}</summary>
+                    <p>{{T "pricing.faq.a2"}}</p>
+                </details>
+                <details class="faq-item">
+                    <summary>{{T "pricing.faq.q3"}}</summary>
+                    <p>{{printf (T "pricing.faq.a3") .FreePromptLimit}}</p>
+                </details>
+                <details class="faq-item">
+                    <summary>{{T "pricing.faq.q4"}}</summary>
+                    <p>{{printf (T "pricing.faq.a4") .StandardPromptLimit .PremiumPromptLimit}}</p>
+                </details>
+                <details class="faq-item">
+                    <summary>{{T "pricing.faq.q5"}}</summary>
+                    <p>{{T "pricing.faq.a5"}}</p>
+                </details>
+                <details class="faq-item">
+                    <summary>{{T "pricing.faq.q6"}}</summary>
+                    <p>{{T "pricing.faq.a6"}}</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    {{template "site_footer" .}}
+
+</div>
+
+<script src="/static/js/mobile-nav.js"></script>
+<script src="/static/js/pricing-flags.js" defer></script>
+{{end}}

@@ -1,0 +1,30 @@
+{{define "site_footer"}}
+<footer class="site-footer">
+    <div class="container-wide">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="{{.LangPrefix}}/" class="logo">
+                    <span class="logo-mark">{{.AppName}}</span>
+                </a>
+                <p class="footer-tagline">{{T "footer.tagline"}}</p>
+            </div>
+            <div class="footer-col">
+                <h3>{{T "footer.product"}}</h3>
+                <ul>
+                    <li><a href="{{.LangPrefix}}/create">{{T "footer.create_link"}}</a></li>
+                    <li><a href="{{.LangPrefix}}/pricing">{{T "footer.pricing"}}</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>{{T "footer.company"}}</h3>
+                <ul>
+                    <li><a href="{{.LangPrefix}}/legal">{{T "footer.legal"}}</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <small>{{printf (T "footer.copyright") .Year}}</small>
+        </div>
+    </div>
+</footer>
+{{end}}

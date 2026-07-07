@@ -1,0 +1,37 @@
+{
+  "app_name": "QR Photo App",
+  "app_url": "http://localhost:8090",
+  "support_email": "support@example.com",
+  "file_storage": "local",
+  "tiers": [
+    {
+      "name": "free",
+      "max_prompts": 5,
+      "price": "Free",
+      "price_cents": 0
+    },
+    {
+      "name": "standard",
+      "max_prompts": 100,
+      "price": "€29",
+      "price_cents": 2900
+    },
+    {
+      "name": "premium",
+      "max_prompts": 500,
+      "price": "€39",
+      "price_cents": 3900
+    }
+  ],
+  "pricing_variants": [],
+  "s3": {
+    "enabled": false,
+    "endpoint": "",
+    "bucket": "",
+    "region": ""
+  },
+  "posthog": {
+    "key": "",
+    "host": "https://eu.i.posthog.com"
+  }
+}

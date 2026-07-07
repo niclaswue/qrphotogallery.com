@@ -1,0 +1,41 @@
+{{define "title"}}Legal{{end}}
+{{define "description"}}{{T "legal.meta_description"}}{{end}}
+{{define "robots"}}noindex, follow{{end}}
+{{define "bodyclass"}}legal{{end}}
+{{define "head"}}<link rel="stylesheet" href="/static/css/app.css">{{end}}
+
+{{define "content"}}
+<div class="app-page">
+    {{template "site_nav" .}}
+
+    <main class="app-main">
+        <div class="app-container">
+            <header class="app-header">
+                <h1>Legal</h1>
+                <p class="subtitle">Imprint, privacy policy and refund policy.</p>
+                <nav class="legal-toc">
+                    <a href="#imprint">Imprint</a>
+                    <a href="#privacy">Privacy</a>
+                    <a href="#refund">Refund</a>
+                </nav>
+            </header>
+
+            <article class="legal-content" id="imprint">
+                {{.Imprint}}
+            </article>
+
+            <article class="legal-content" id="privacy">
+                {{.Privacy}}
+            </article>
+
+            <article class="legal-content" id="refund">
+                {{.Refund}}
+            </article>
+        </div>
+    </main>
+
+    {{template "site_footer" .}}
+</div>
+
+<script src="/static/js/mobile-nav.js"></script>
+{{end}}

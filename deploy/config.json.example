@@ -1,0 +1,16 @@
+{
+  "app_name": "QR Photo App",
+  "app_url": "https://example.com",
+  "file_storage": "local",
+  "tiers": [
+    {"name": "free",     "max_prompts": 5,   "price": "Free",   "price_cents": 0},
+    {"name": "standard", "max_prompts": 50,  "price": "€49", "price_cents": 4900},
+    {"name": "premium",  "max_prompts": 200, "price": "€69", "price_cents": 6900}
+  ],
+  "s3": {
+    "enabled": false,
+    "endpoint": "",
+    "bucket": "",
+    "region": ""
+  }
+}

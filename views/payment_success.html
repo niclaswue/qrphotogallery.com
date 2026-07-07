@@ -1,0 +1,55 @@
+{{define "title"}}{{T "payment_success.title"}}{{end}}
+{{define "description"}}{{T "payment_success.meta_description"}}{{end}}
+{{define "robots"}}noindex, nofollow{{end}}
+{{define "bodyclass"}}payment-success{{end}}
+{{define "head"}}<link rel="stylesheet" href="/static/css/app.css">
+{{if .PurchasedPlan}}<meta name="ph-event" content="payment_completed" data-plan="{{.PurchasedPlan}}" data-pending="{{if .UpgradePending}}1{{else}}0{{end}}" data-value="{{.PurchasedValue}}" data-currency="EUR">{{end}}
+{{end}}
+
+{{define "content"}}
+<div class="app-page">
+    {{template "site_nav" .}}
+
+    <main class="app-main">
+        <div class="app-container">
+            <div class="plan-summary">
+                <div class="big-icon">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+
+                {{if .UpgradePending}}
+                <h1>{{T "payment_success.pending.heading"}}</h1>
+                <p>{{T "payment_success.pending.subtitle"}}</p>
+                {{if .PurchasedPlan}}<span class="plan-pill {{.PurchasedPlan}}">{{T "payment_success.purchased_label"}}: {{.PurchasedPlan}}</span>{{end}}
+                <p style="margin-top:16px">
+                    {{if .Auth}}{{T "payment_success.pending.body_auth"}}
+                    {{else}}{{T "payment_success.pending.body_anon"}} <a href="{{.LangPrefix}}/login">{{T "payment_success.login_prompt"}}</a> {{T "payment_success.to_login"}}{{end}}
+                </p>
+                {{else if .PurchasedPlan}}
+                <h1>{{T "payment_success.active.heading"}}</h1>
+                <p>{{T "payment_success.active.subtitle"}}</p>
+                <span class="plan-pill {{.PurchasedPlan}}">{{T "payment_success.plan_label"}}: {{.PurchasedPlan}}</span>
+                {{else}}
+                <h1>{{T "payment_success.generic.heading"}}</h1>
+                {{if .CurrentPlan}}
+                <span class="plan-pill {{.CurrentPlan}}">{{T "payment_success.plan_label"}}: {{.CurrentPlan}}</span>
+                {{else}}
+                <p><a href="{{.LangPrefix}}/login">{{T "payment_success.login_prompt"}}</a> {{T "payment_success.to_login"}}</p>
+                {{end}}
+                {{end}}
+
+                <div class="btn-row" style="justify-content:center;margin-top:28px">
+                    <a href="{{.LangPrefix}}/overview" class="btn btn-primary btn-large">
+                        {{T "payment_success.go_to_account"}}
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    {{template "site_footer" .}}
+</div>
+
+<script src="/static/js/mobile-nav.js"></script>
+{{end}}
