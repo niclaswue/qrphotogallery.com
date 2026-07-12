@@ -94,13 +94,14 @@ func handleEditPromptsSubmit(e *core.RequestEvent) error {
 			prompts = append(prompts, promptInput{Text: text})
 		}
 	}
-	if len(prompts) == 0 {
-		return e.BadRequestError("At least one prompt is required", nil)
-	}
-
-	tier := getUserTier(e.Auth)
-	if len(prompts) > tier.MaxPrompts {
-		return renderUpgradeError(e, tier.MaxPrompts)
+	// qrphotogallery.com hides the template's prompt model. The simple edit
+	// form only updates gallery metadata, leaving the single internal upload
+	// bucket (and every file attached to it) untouched.
+	if len(prompts) > 0 {
+		tier := getUserTier(e.Auth)
+		if len(prompts) > tier.MaxPrompts {
+			return renderUpgradeError(e, tier.MaxPrompts)
+		}
 	}
 
 	event.Set("title", title)
@@ -109,8 +110,10 @@ func handleEditPromptsSubmit(e *core.RequestEvent) error {
 		return e.InternalServerError("Failed to update event", err)
 	}
 
-	if err := updateEventPrompts(e, event.Id, prompts); err != nil {
-		return e.InternalServerError("Failed to update prompts", err)
+	if len(prompts) > 0 {
+		if err := updateEventPrompts(e, event.Id, prompts); err != nil {
+			return e.InternalServerError("Failed to update gallery", err)
+		}
 	}
 
 	return redirectLocalised(e, http.StatusSeeOther, "/overview/"+event.Id)
@@ -128,6 +131,9 @@ func handleEventSettingsSubmit(e *core.RequestEvent) error {
 	event, err := findOwnedEvent(e)
 	if event == nil {
 		return err
+	}
+	if !isPremiumTier(getUserTier(e.Auth).Name) {
+		return renderHTMLError(e, http.StatusForbidden, "Commercial Feature", "Advanced guest controls are included in the Commercial plan.")
 	}
 
 	data := struct {

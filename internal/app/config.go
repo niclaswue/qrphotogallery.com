@@ -121,14 +121,14 @@ func LoadConfig(path string) (*Config, error) {
 
 func defaultConfig() *Config {
 	return &Config{
-		AppName:      "QR Photo App",
+		AppName:      "QR Photo Gallery",
 		AppURL:       "http://localhost:8090",
 		FileStorage:  "local",
-		SupportEmail: "support@example.com",
+		SupportEmail: "hello@qrphotogallery.com",
 		Tiers: []TierConfig{
-			{Name: "free", MaxPrompts: 5, Price: "Free", PriceCents: 0},
-			{Name: "standard", MaxPrompts: 100, Price: "€29", PriceCents: 2900},
-			{Name: "premium", MaxPrompts: 500, Price: "€39", PriceCents: 3900},
+			{Name: "free", MaxPrompts: 1, Price: "Free", PriceCents: 0},
+			{Name: "standard", MaxPrompts: 1, Price: "€19", PriceCents: 1900},
+			{Name: "premium", MaxPrompts: 1, Price: "€29", PriceCents: 2900},
 		},
 	}
 }

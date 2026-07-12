@@ -100,7 +100,10 @@ func init() {
 			// Thumbs let the admin dashboard request small centre-cropped
 			// renditions via ?thumb= instead of full-res originals. PocketBase
 			// only generates sizes listed here; keep in sync with admin.html.
-			uploads.Fields.Add(&core.FileField{Name: "image", Required: true, MaxSelect: 1, MaxSize: 52428800, Thumbs: []string{adminThumbSize}})
+			// Originals are never recompressed. A generous per-file ceiling lets
+			// guests send phone video while the handler enforces the 100 GB
+			// aggregate gallery allowance.
+			uploads.Fields.Add(&core.FileField{Name: "image", Required: true, MaxSelect: 1, MaxSize: 2147483648, Thumbs: []string{adminThumbSize}})
 			uploads.Fields.Add(&core.FileField{Name: "display", MaxSelect: 1, MaxSize: 52428800, Thumbs: []string{adminThumbSize}})
 			uploads.Fields.Add(&core.TextField{Name: "prompt", Required: true})
 			uploads.Fields.Add(&core.TextField{Name: "event", Required: true})

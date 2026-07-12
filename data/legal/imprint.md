@@ -11,7 +11,7 @@ YOUR CITY, COUNTRY
 
 ## Contact
 
-Email: support@example.com
+Email: hello@qrphotogallery.com
 
 ## Responsible for content
 

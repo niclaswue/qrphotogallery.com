@@ -50,6 +50,7 @@ func Run() {
 	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
 		Automigrate: osutils.IsProbablyGoRun(),
 	})
+	registerRetentionCleanup(app)
 
 	app.OnBootstrap().BindFunc(func(e *core.BootstrapEvent) error {
 		if err := e.Next(); err != nil {
@@ -132,7 +133,7 @@ func registerRoutes(se *core.ServeEvent) {
 	registerLocalisedGet(r, "/e/{id}/library", handleEventLibrary)
 	registerLocalisedGet(r, "/e/{id}/download", handleGuestDownloadGallery)
 	registerLocalisedGet(r, "/e/{id}/{promptID}", handleEventUpload)
-	registerLocalisedPost(r, "/e/{id}/{promptID}", handleEventUpload)
+	registerLocalisedUploadPost(r, "/e/{id}/{promptID}", handleEventUpload)
 
 	registerLocalisedGet(r, "/payment", handlePayment)
 	registerLocalisedGet(r, "/payment/success", handlePaymentSuccess)
@@ -184,6 +185,20 @@ func registerLocalisedPost(r *router.Router[*core.RequestEvent], path string, h 
 			continue
 		}
 		r.POST("/"+lang+path, h)
+	}
+}
+
+// registerLocalisedUploadPost raises PocketBase's conservative 32 MB global
+// request ceiling only for the guest media endpoint. Other forms keep the
+// smaller default attack surface; upload batches may contain a 2 GB video or
+// several originals up to the 4 GB request cap.
+func registerLocalisedUploadPost(r *router.Router[*core.RequestEvent], path string, h func(*core.RequestEvent) error) {
+	r.POST(path, h).Bind(apis.BodyLimit(maxUploadRequestSize))
+	for _, lang := range i18n.SupportedLangs {
+		if lang == i18n.DefaultLang {
+			continue
+		}
+		r.POST("/"+lang+path, h).Bind(apis.BodyLimit(maxUploadRequestSize))
 	}
 }
 

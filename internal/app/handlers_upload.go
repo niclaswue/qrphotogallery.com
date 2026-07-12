@@ -138,6 +138,10 @@ func handleEventUpload(e *core.RequestEvent) error {
 		}))
 	}
 
+	if !eventGalleryActive(event) {
+		return renderUpload("upload.error.expired")
+	}
+
 	if e.Request.Method == http.MethodGet {
 		return renderUpload("")
 	}
@@ -157,11 +161,24 @@ func handleEventUpload(e *core.RequestEvent) error {
 	if err != nil || len(files) == 0 {
 		return renderUpload("upload.error.no_file")
 	}
-
-	upload := files[0]
-	format, ok := detectImageFormat(upload)
-	if !ok {
-		return renderUpload("upload.error.bad_format")
+	if len(files) > 100 {
+		return renderUpload("upload.error.too_many")
+	}
+	formats := make([]string, len(files))
+	var incomingBytes int64
+	for i, file := range files {
+		if file.Size <= 0 || file.Size > maxUploadFileSize {
+			return renderUpload("upload.error.too_large")
+		}
+		format, _, ok := detectUploadFormat(file)
+		if !ok {
+			return renderUpload("upload.error.bad_format")
+		}
+		formats[i] = format
+		incomingBytes += file.Size
+	}
+	if galleryUsageBytes(e.App, eventID)+incomingBytes > galleryStorageLimit {
+		return renderUpload("upload.error.gallery_full")
 	}
 
 	// A name is required only when the owner turned the setting on. The client
@@ -182,23 +199,22 @@ func handleEventUpload(e *core.RequestEvent) error {
 		return e.InternalServerError("Failed to create upload record", err)
 	}
 
-	record := core.NewRecord(collection)
-	record.Set("prompt", prompt.Id)
-	record.Set("event", eventID)
-	record.Set("image", upload)
-	if collectName {
-		record.Set("guest_name", guestName)
-	}
-	if err := e.App.Save(record); err != nil {
-		return e.InternalServerError("Failed to save upload", err)
-	}
-
-	// HEIC/HEIF (the iPhone default) can't be rendered by browsers, so we
-	// store the original and transcode a JPEG rendition into the `display`
-	// field in the background. The guest is redirected immediately; the
-	// gallery falls back to a placeholder until the rendition lands.
-	if format == "heic" || format == "heif" {
-		queueDisplayConversion(e.App, record.Id)
+	for i, file := range files {
+		record := core.NewRecord(collection)
+		record.Set("prompt", prompt.Id)
+		record.Set("event", eventID)
+		record.Set("image", file)
+		if collectName {
+			record.Set("guest_name", guestName)
+		}
+		if err := e.App.Save(record); err != nil {
+			return e.InternalServerError("Failed to save upload", err)
+		}
+		// HEIC/HEIF originals stay untouched; only a browser-friendly preview
+		// is generated in the background.
+		if formats[i] == "heic" || formats[i] == "heif" {
+			queueDisplayConversion(e.App, record.Id)
+		}
 	}
 
 	setSubmissionCookie(e, eventID)
@@ -223,6 +239,9 @@ func handleEventLibrary(e *core.RequestEvent) error {
 	if err != nil {
 		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
 	}
+	if !eventGalleryActive(event) {
+		return renderHTMLError(e, http.StatusGone, "Gallery Expired", "This gallery's one-year availability period has ended.")
+	}
 
 	lang := guestLang(e, event)
 
@@ -241,40 +260,33 @@ func handleEventLibrary(e *core.RequestEvent) error {
 		PromptText string
 		ImageURL   string
 		PhotoCount int
+		MediaKind  string
 	}
 	type slide struct {
 		ImageURL   string
 		PromptText string
 		PromptID   string
 		GuestName  string
+		MediaKind  string
 	}
 
 	var items []libraryItem
 	var slides []slide
 	uploadedCount := 0
 	for _, p := range prompts {
-		item := libraryItem{PromptID: p.Id, PromptText: p.GetString("text")}
 		uploads, _ := e.App.FindRecordsByFilter("uploads", "prompt = {:pid}", "-created", 0, 0, dbxParams{"pid": p.Id})
-		if len(uploads) > 0 {
-			item.ImageURL = uploadDisplayURL(uploads[0])
-			item.PhotoCount = len(uploads)
+		for _, u := range uploads {
+			kind := uploadMediaKind(u)
+			items = append(items, libraryItem{PromptID: p.Id, PromptText: p.GetString("text"), ImageURL: uploadDisplayURL(u), PhotoCount: 1, MediaKind: kind})
+			slides = append(slides, slide{ImageURL: uploadDisplayURL(u), PromptText: p.GetString("text"), PromptID: p.Id, GuestName: u.GetString("guest_name"), MediaKind: kind})
 			uploadedCount++
-			for _, u := range uploads {
-				slides = append(slides, slide{
-					ImageURL:   uploadDisplayURL(u),
-					PromptText: p.GetString("text"),
-					PromptID:   p.Id,
-					GuestName:  u.GetString("guest_name"),
-				})
-			}
 		}
-		items = append(items, item)
 	}
 
 	// Guest gallery ZIP downloads are a paid feature. Free-tier events
 	// never expose the button, regardless of the owner's per-event
 	// disable_guest_download toggle.
-	guestDownloadEnabled := !event.GetBool("disable_guest_download") && eventOwnerPaid(e.App, event)
+	guestDownloadEnabled := !disableGuestDownloadEnabled(e.App, event) && eventOwnerPaid(e.App, event)
 	already := e.Request.URL.Query().Get("already") == "1"
 
 	return e.HTML(http.StatusOK, renderWithBase(e, "library", map[string]any{
@@ -299,6 +311,9 @@ func handleEventDone(e *core.RequestEvent) error {
 	event, err := e.App.FindRecordById("events", eventID)
 	if err != nil {
 		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+	}
+	if !eventGalleryActive(event) {
+		return renderHTMLError(e, http.StatusGone, "Gallery Expired", "This gallery's one-year availability period has ended.")
 	}
 
 	lang := guestLang(e, event)
@@ -458,6 +473,9 @@ func handleEventDispatch(e *core.RequestEvent) error {
 	event, err := e.App.FindRecordById("events", eventID)
 	if err != nil {
 		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+	}
+	if !eventGalleryActive(event) {
+		return renderHTMLError(e, http.StatusGone, "Gallery Expired", "This gallery's one-year availability period has ended.")
 	}
 
 	// Single-QR is opt-in per event. If it's off — including the case where

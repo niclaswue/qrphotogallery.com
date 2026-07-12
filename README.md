@@ -1,4 +1,21 @@
-# template-qr-photo
+# QR Photo Gallery
+
+This repository is the qrphotogallery.com product built from the original
+QR-photo template. It is deliberately focused on one job: share one QR code
+and collect every guest photo and video in original quality.
+
+Product defaults:
+
+- Personal: €19 one-time, for private/non-commercial use
+- Commercial: €29 one-time, for businesses, professionals and client work
+- 100 GB per gallery, common photo/video formats, up to 2 GB per file
+- EU-hosted storage, one-year availability and automatic retention cleanup
+- no app or guest account; batch uploads from any modern phone browser
+
+The internal `events → prompts → uploads` pipeline remains intact, with a
+single hidden prompt acting as each gallery's upload bucket.
+
+## Template heritage
 
 A production-proven template for **QR-code event media businesses**: guests
 scan a printed QR code at an event, get a page in their phone browser, and

@@ -47,6 +47,8 @@ func isPaidTier(name string) bool {
 	return name != "" && name != "free"
 }
 
+func isPremiumTier(name string) bool { return name == "premium" }
+
 // eventOwnerPaid reports whether the owner of event is on a paid plan.
 // Guest-facing upload/download routes are unauthenticated, so the owner's
 // tier can't come from e.Auth — it's resolved from the event's owner record.
@@ -64,12 +66,17 @@ func eventOwnerPaid(app core.App, event *core.Record) bool {
 	return isPaidTier(getUserTier(owner).Name)
 }
 
+func eventOwnerPremium(app core.App, event *core.Record) bool {
+	owner, err := app.FindRecordById("users", event.GetString("owner"))
+	return err == nil && owner != nil && isPremiumTier(getUserTier(owner).Name)
+}
+
 // lockAfterSubmitEnabled reports whether the one-upload-per-guest lock is
 // active for an event. Like the guest ZIP download, it's a paid feature:
 // the per-event toggle only takes effect while the owner is on a paid
 // plan, so a downgrade quietly disables it without touching stored settings.
 func lockAfterSubmitEnabled(app core.App, event *core.Record) bool {
-	return event.GetBool("lock_after_submit") && eventOwnerPaid(app, event)
+	return event.GetBool("lock_after_submit") && eventOwnerPremium(app, event)
 }
 
 // collectGuestNameEnabled reports whether the guest upload form should ask for
@@ -78,7 +85,11 @@ func lockAfterSubmitEnabled(app core.App, event *core.Record) bool {
 // while the owner is on a paid plan, so a downgrade quietly disables it
 // without touching stored settings.
 func collectGuestNameEnabled(app core.App, event *core.Record) bool {
-	return event.GetBool("collect_guest_name") && eventOwnerPaid(app, event)
+	return event.GetBool("collect_guest_name") && eventOwnerPremium(app, event)
+}
+
+func disableGuestDownloadEnabled(app core.App, event *core.Record) bool {
+	return event.GetBool("disable_guest_download") && eventOwnerPremium(app, event)
 }
 
 // maxGuestNameLen caps a submitted guest name. Matches the uploads.guest_name
@@ -187,4 +198,92 @@ func detectImageFormat(f *filesystem.File) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// detectUploadFormat accepts both full-resolution stills and the video
+// containers guests commonly produce on phones and cameras. Every decision
+// is based on file contents (with the original filename used only to
+// distinguish compatible ISO media containers), so renaming an arbitrary
+// executable never makes it uploadable.
+func detectUploadFormat(f *filesystem.File) (format, kind string, ok bool) {
+	if format, ok := detectImageFormat(f); ok {
+		return format, "image", true
+	}
+	if f == nil || f.Reader == nil {
+		return "", "", false
+	}
+	r, err := f.Reader.Open()
+	if err != nil {
+		return "", "", false
+	}
+	defer r.Close()
+	buf := make([]byte, 32)
+	n, _ := r.Read(buf)
+	head := buf[:n]
+	ext := strings.ToLower(f.OriginalName)
+	if n >= 12 && bytes.Equal(head[4:8], []byte("ftyp")) {
+		brand := string(head[8:12])
+		switch brand {
+		case "qt  ":
+			return "mov", "video", true
+		case "3gp4", "3gp5", "3gp6", "3g2a", "3g2b":
+			return "3gp", "video", true
+		default:
+			if strings.HasSuffix(ext, ".mp4") || strings.HasSuffix(ext, ".m4v") || strings.HasSuffix(ext, ".mov") {
+				return "mp4", "video", true
+			}
+		}
+	}
+	if n >= 4 && bytes.Equal(head[:4], []byte{0x1A, 0x45, 0xDF, 0xA3}) {
+		return "webm", "video", true
+	}
+	if n >= 12 && bytes.HasPrefix(head, []byte("RIFF")) && bytes.Equal(head[8:12], []byte("AVI ")) {
+		return "avi", "video", true
+	}
+	if n >= 4 && (bytes.HasPrefix(head, []byte{0x00, 0x00, 0x01, 0xBA}) || bytes.HasPrefix(head, []byte{0x00, 0x00, 0x01, 0xB3})) {
+		return "mpeg", "video", true
+	}
+	return "", "", false
+}
+
+func uploadMediaKind(u *core.Record) string {
+	name := strings.ToLower(u.GetString("image"))
+	for _, ext := range []string{".mp4", ".mov", ".m4v", ".webm", ".avi", ".mpeg", ".mpg", ".3gp"} {
+		if strings.HasSuffix(name, ext) {
+			return "video"
+		}
+	}
+	return "image"
+}
+
+const (
+	galleryStorageLimit  = int64(100 * 1024 * 1024 * 1024)
+	maxUploadFileSize    = int64(2 * 1024 * 1024 * 1024)
+	maxUploadRequestSize = int64(4 * 1024 * 1024 * 1024)
+)
+
+func galleryUsageBytes(app core.App, eventID string) int64 {
+	uploads, err := app.FindRecordsByFilter("uploads", "event = {:eid}", "", 0, 0, dbxParams{"eid": eventID})
+	if err != nil {
+		return 0
+	}
+	fsys, err := app.NewFilesystem()
+	if err != nil {
+		return 0
+	}
+	defer fsys.Close()
+	var total int64
+	for _, u := range uploads {
+		if name := u.GetString("image"); name != "" {
+			if attrs, err := fsys.Attributes(u.BaseFilesPath() + "/" + name); err == nil {
+				total += attrs.Size
+			}
+		}
+	}
+	return total
+}
+
+func eventGalleryActive(event *core.Record) bool {
+	created := event.GetDateTime("created").Time()
+	return created.IsZero() || time.Now().Before(created.AddDate(1, 0, 0))
 }

@@ -1,26 +1,26 @@
 {
-  "app_name": "QR Photo App",
-  "app_url": "http://localhost:8090",
-  "support_email": "support@example.com",
+  "app_name": "QR Photo Gallery",
+  "app_url": "https://qrphotogallery.com",
+  "support_email": "hello@qrphotogallery.com",
   "file_storage": "local",
   "tiers": [
     {
       "name": "free",
-      "max_prompts": 5,
+      "max_prompts": 1,
       "price": "Free",
       "price_cents": 0
     },
     {
       "name": "standard",
-      "max_prompts": 100,
-      "price": "€29",
-      "price_cents": 2900
+      "max_prompts": 1,
+      "price": "€19",
+      "price_cents": 1900
     },
     {
       "name": "premium",
-      "max_prompts": 500,
-      "price": "€39",
-      "price_cents": 3900
+      "max_prompts": 1,
+      "price": "€29",
+      "price_cents": 2900
     }
   ],
   "pricing_variants": [],

@@ -3,7 +3,8 @@
     <div class="container-wide">
         <div class="nav-inner">
             <a href="{{.LangPrefix}}/" class="logo">
-                <span class="logo-mark">{{.AppName}}</span>
+                <span class="logo-symbol" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="logo-mark"><strong>QR</strong> Photo Gallery</span>
             </a>
             <div class="nav-actions">
                 <a href="{{.LangPrefix}}/pricing" class="nav-link">{{T "nav.pricing"}}</a>
@@ -12,7 +13,7 @@
                 <a href="{{.LangPrefix}}/logout" class="btn btn-secondary btn-nav">{{T "nav.logout"}}</a>
                 {{else}}
                 <a href="{{.LangPrefix}}/login" class="nav-link nav-link-login">{{T "nav.login"}}</a>
-                <a href="{{.LangPrefix}}/register" class="btn btn-primary btn-nav">{{T "nav.signup"}}</a>
+                <a href="{{.LangPrefix}}/pricing" class="btn btn-primary btn-nav">{{T "nav.signup"}}</a>
                 {{end}}
                 {{/* Guest QR pages follow the event's language; the site-wide
                      picker (and its site-preference cookie) doesn't apply there. */}}
@@ -37,7 +38,7 @@
         <a href="{{.LangPrefix}}/logout" class="nav-mobile-link">{{T "nav.logout"}}</a>
         {{else}}
         <a href="{{.LangPrefix}}/login" class="nav-mobile-link">{{T "nav.login"}}</a>
-        <a href="{{.LangPrefix}}/register" class="btn btn-primary">{{T "nav.signup"}}</a>
+        <a href="{{.LangPrefix}}/pricing" class="btn btn-primary">{{T "nav.signup"}}</a>
         {{end}}
         {{if not .GuestPage}}<div class="nav-mobile-lang">{{template "lang_switcher" .}}</div>{{end}}
     </nav>

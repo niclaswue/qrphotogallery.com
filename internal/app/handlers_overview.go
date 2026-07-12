@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/pocketbase/pocketbase/core"
@@ -82,6 +83,9 @@ func handleOverview(e *core.RequestEvent) error {
 	if design == nil {
 		design = &Designs[0]
 	}
+	uploads, _ := e.App.FindRecordsByFilter("uploads", "event = {:eid}", "", 0, 0, dbxParams{"eid": event.Id})
+	usedGB := float64(galleryUsageBytes(e.App, event.Id)) / float64(1024*1024*1024)
+	expires := event.GetDateTime("created").Time().AddDate(1, 0, 0)
 
 	return e.HTML(http.StatusOK, renderWithBase(e, "overview", map[string]any{
 		"Event":                event,
@@ -94,6 +98,9 @@ func handleOverview(e *core.RequestEvent) error {
 		"SingleQRMode":         event.GetBool("single_qr_mode"),
 		"EventLang":            eventStoredLang(event),
 		"SupportEmail":         appConfig.SupportEmail,
+		"UploadCount":          len(uploads),
+		"StorageUsedGB":        fmt.Sprintf("%.2f", usedGB),
+		"ExpiresOn":            expires.Format("02 Jan 2006"),
 	}))
 }
 
@@ -120,6 +127,7 @@ func handleGallery(e *core.RequestEvent) error {
 		ImageURL   string
 		UploadID   string
 		GuestName  string
+		MediaKind  string
 	}
 
 	var items []galleryItem
@@ -139,6 +147,7 @@ func handleGallery(e *core.RequestEvent) error {
 				ImageURL:   uploadDisplayURL(u),
 				UploadID:   u.Id,
 				GuestName:  u.GetString("guest_name"),
+				MediaKind:  uploadMediaKind(u),
 			})
 		}
 	}

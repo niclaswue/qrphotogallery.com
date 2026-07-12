@@ -1,171 +1,27 @@
-{{define "title"}}{{T "library.title"}}{{end}}
+{{define "title"}}{{.Event.GetString "title"}} · {{T "library.title"}}{{end}}
 {{define "description"}}{{T "library.meta_description"}}{{end}}
 {{define "robots"}}noindex, nofollow{{end}}
 {{define "bodyclass"}}library{{end}}
-{{define "head"}}<link rel="stylesheet" href="/static/css/app.css">{{end}}
-
+{{define "head"}}<link rel="stylesheet" href="/static/css/app.css"><link rel="stylesheet" href="/static/css/challenge.css">{{end}}
 {{define "content"}}
-<div class="app-page">
-    {{template "site_nav" .}}
-    
-
-    <main class="app-main">
-        <div class="app-container">
-            <header class="app-header" style="text-align:center">
-                <h1>{{.Event.GetString "title"}}</h1>
-                <p class="subtitle" style="margin:0 auto">{{printf (T "library.progress") .UploadedCount .TotalPrompts}}</p>
-            </header>
-
-            {{if .Already}}
-            <div class="library-toast" role="status">{{T "library.already_submitted"}}</div>
-            {{end}}
-
-            {{if and .GuestDownloadEnabled .Slides}}
-            <div class="library-actions">
-                <a href="{{.LangPrefix}}/e/{{.Event.Id}}/download" class="btn btn-secondary"
-                   data-ph-event="gallery_zip_downloaded" data-ph-prop-actor="guest" data-ph-prop-event="{{.Event.Id}}">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    {{T "library.download_all"}}
-                </a>
-            </div>
-            {{end}}
-
-            {{if .Items}}
-            <div class="gallery-grid">
-                {{range $idx, $item := .Items}}
-                <div class="gallery-item">
-                    {{if $item.ImageURL}}
-                    <a href="{{$.LangPrefix}}/e/{{$.Event.Id}}/{{$item.PromptID}}" class="photo" data-prompt="{{$item.PromptID}}">
-                        <img src="/api/files/{{$item.ImageURL}}" alt="{{$item.PromptText}}" loading="lazy">
-                        {{if gt $item.PhotoCount 1}}<span class="count-chip">{{$item.PhotoCount}}</span>{{end}}
-                    </a>
-                    {{else}}
-                    <a href="{{$.LangPrefix}}/e/{{$.Event.Id}}/{{$item.PromptID}}" class="photo">
-                        <div class="photo-empty">
-                            <span class="plus">+</span>
-                            <span>{{T "library.tap_upload"}}</span>
-                        </div>
-                    </a>
-                    {{end}}
-                    <div class="caption">{{$item.PromptText}}</div>
-                </div>
-                {{end}}
-            </div>
-            {{else}}
-            <div class="empty-state">
-                <p>{{T "library.empty"}}</p>
-            </div>
-            {{end}}
-        </div>
+<div class="guest-gallery" style="--guest-primary:{{.Design.Primary}};--guest-bg:{{.Design.Background}};--guest-text:{{.Design.Text}}">
+    <header class="guest-header"><a href="{{.LangPrefix}}/e/{{.Event.Id}}" class="guest-brand"><span class="logo-symbol"><i></i><i></i><i></i></span><strong>QR Photo Gallery</strong></a><a class="btn btn-primary" href="{{.LangPrefix}}/e/{{.Event.Id}}">+ {{T "library.add_media"}}</a></header>
+    <main class="gallery-main">
+        <header class="gallery-heading"><span>{{T "library.eyebrow"}}</span><h1>{{.Event.GetString "title"}}</h1><p>{{printf (T "library.progress") .UploadedCount}}</p>
+            {{if and .GuestDownloadEnabled .Slides}}<a href="{{.LangPrefix}}/e/{{.Event.Id}}/download" class="gallery-download">↓ {{T "library.download_all"}}</a>{{end}}
+        </header>
+        {{if .Already}}<div class="library-toast">{{T "library.already_submitted"}}</div>{{end}}
+        {{if .Items}}<div class="media-grid">
+            {{range $idx, $item := .Items}}<button class="media-tile" type="button" data-slide="{{$idx}}">
+                {{if eq $item.MediaKind "video"}}<video src="/api/files/{{$item.ImageURL}}#t=0.1" preload="metadata" muted playsinline></video><span class="video-badge">▶</span>{{else}}<img src="/api/files/{{$item.ImageURL}}" alt="" loading="lazy">{{end}}
+            </button>{{end}}
+        </div>{{else}}<div class="gallery-empty"><span>↑</span><h2>{{T "library.empty"}}</h2><p>{{T "gallery.empty.body"}}</p><a class="btn btn-primary btn-large" href="{{.LangPrefix}}/e/{{.Event.Id}}">{{T "library.add_first"}}</a></div>{{end}}
     </main>
+    <footer class="guest-gallery-footer">{{T "upload.powered_by"}} <strong>QR Photo Gallery</strong> · {{T "upload.eu"}}</footer>
 </div>
-
-{{if .Slides}}
-<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="{{T "library.lightbox.title"}}" hidden>
-    <button type="button" class="lightbox-close" id="lightbox-close" aria-label="{{T "library.lightbox.close"}}">&times;</button>
-    <span class="lightbox-counter" id="lightbox-counter" aria-live="polite"></span>
-    <button type="button" class="lightbox-prev" id="lightbox-prev" aria-label="{{T "library.lightbox.prev"}}">&#8249;</button>
-    <button type="button" class="lightbox-next" id="lightbox-next" aria-label="{{T "library.lightbox.next"}}">&#8250;</button>
-    <div class="lightbox-track" id="lightbox-track">
-        {{range $i, $s := .Slides}}
-        <div class="lightbox-slide" data-prompt="{{$s.PromptID}}">
-            <img src="/api/files/{{$s.ImageURL}}" alt="{{$s.PromptText}}" loading="lazy">
-            <div class="lightbox-caption">{{$s.PromptText}}{{if $s.GuestName}}<span class="lightbox-author">{{T "library.photo_by"}} {{$s.GuestName}}</span>{{end}}</div>
-        </div>
-        {{end}}
-    </div>
-</div>
-{{end}}
-
-<script src="/static/js/mobile-nav.js"></script>
+{{if .Slides}}<div class="lightbox" id="lightbox" hidden><button id="lightbox-close" class="lightbox-close" aria-label="{{T "library.lightbox.close"}}">×</button><span id="lightbox-counter" class="lightbox-counter"></span><button id="lightbox-prev" class="lightbox-prev">‹</button><button id="lightbox-next" class="lightbox-next">›</button><div class="lightbox-track" id="lightbox-track">
+{{range .Slides}}<div class="lightbox-slide">{{if eq .MediaKind "video"}}<video src="/api/files/{{.ImageURL}}" controls playsinline preload="metadata"></video>{{else}}<img src="/api/files/{{.ImageURL}}" alt="" loading="lazy">{{end}}{{if .GuestName}}<small>{{T "library.photo_by"}} {{.GuestName}}</small>{{end}}</div>{{end}}
+</div></div>{{end}}
 <script>
-(function(){
-    var lb = document.getElementById('lightbox');
-    if (!lb) return;
-    var track = document.getElementById('lightbox-track');
-    var slides = track ? track.querySelectorAll('.lightbox-slide') : [];
-    if (!track || slides.length === 0) return;
-
-    var counter = document.getElementById('lightbox-counter');
-    var closeBtn = document.getElementById('lightbox-close');
-    var prevBtn = document.getElementById('lightbox-prev');
-    var nextBtn = document.getElementById('lightbox-next');
-
-    function openAt(promptId) {
-        var index = 0;
-        for (var i = 0; i < slides.length; i++) {
-            if (slides[i].getAttribute('data-prompt') === promptId) { index = i; break; }
-        }
-        lb.hidden = false;
-        lb.classList.add('is-open');
-        document.body.classList.add('lightbox-open');
-        // Scroll without smooth animation so we land on the right slide.
-        track.scrollTo({ left: slides[index].offsetLeft, top: 0, behavior: 'auto' });
-        updateCounter();
-    }
-
-    function close() {
-        lb.classList.remove('is-open');
-        lb.hidden = true;
-        document.body.classList.remove('lightbox-open');
-    }
-
-    function currentIndex() {
-        var w = track.clientWidth;
-        if (w === 0) return 0;
-        return Math.round(track.scrollLeft / w);
-    }
-
-    function updateCounter() {
-        var idx = currentIndex();
-        if (counter) counter.textContent = (idx + 1) + ' / ' + slides.length;
-    }
-
-    function move(delta) {
-        var idx = currentIndex() + delta;
-        if (idx < 0) idx = 0;
-        if (idx >= slides.length) idx = slides.length - 1;
-        track.scrollTo({ left: slides[idx].offsetLeft, top: 0, behavior: 'smooth' });
-    }
-
-    // Wire grid thumbnails: capture the click on each .photo link that has a
-    // data-prompt and open the lightbox to that prompt's first slide.
-    var photos = document.querySelectorAll('.gallery-item a.photo[data-prompt]');
-    photos.forEach(function(a){
-        a.addEventListener('click', function(ev){
-            ev.preventDefault();
-            openAt(a.getAttribute('data-prompt'));
-        });
-    });
-
-    closeBtn && closeBtn.addEventListener('click', close);
-    prevBtn && prevBtn.addEventListener('click', function(){ move(-1); });
-    nextBtn && nextBtn.addEventListener('click', function(){ move(1); });
-
-    track.addEventListener('scroll', function(){
-        // Throttle via requestAnimationFrame to avoid spamming counter writes.
-        if (track._rafPending) return;
-        track._rafPending = true;
-        requestAnimationFrame(function(){
-            track._rafPending = false;
-            updateCounter();
-        });
-    });
-
-    document.addEventListener('keydown', function(ev){
-        if (lb.hidden) return;
-        if (ev.key === 'Escape') close();
-        else if (ev.key === 'ArrowRight') move(1);
-        else if (ev.key === 'ArrowLeft') move(-1);
-    });
-
-    // Tap outside the image (on the track background, not the image itself)
-    // closes the lightbox — common phone-gallery behaviour.
-    lb.addEventListener('click', function(ev){
-        if (ev.target === track || ev.target.classList.contains('lightbox-slide')) {
-            close();
-        }
-    });
-})();
-</script>
-{{end}}
+(function(){var lb=document.getElementById('lightbox');if(!lb)return;var track=document.getElementById('lightbox-track'),slides=track.children,counter=document.getElementById('lightbox-counter'),current=0;function show(i){current=Math.max(0,Math.min(slides.length-1,i));lb.hidden=false;lb.classList.add('is-open');document.body.classList.add('lightbox-open');track.scrollTo({left:slides[current].offsetLeft,behavior:'auto'});counter.textContent=(current+1)+' / '+slides.length}function close(){lb.hidden=true;lb.classList.remove('is-open');document.body.classList.remove('lightbox-open');Array.prototype.forEach.call(track.querySelectorAll('video'),function(v){v.pause()})}document.querySelectorAll('[data-slide]').forEach(function(el){el.onclick=function(){show(parseInt(el.dataset.slide,10))}});document.getElementById('lightbox-close').onclick=close;document.getElementById('lightbox-prev').onclick=function(){show(current-1)};document.getElementById('lightbox-next').onclick=function(){show(current+1)};document.addEventListener('keydown',function(e){if(lb.hidden)return;if(e.key==='Escape')close();if(e.key==='ArrowRight')show(current+1);if(e.key==='ArrowLeft')show(current-1)})})();
+</script>{{end}}

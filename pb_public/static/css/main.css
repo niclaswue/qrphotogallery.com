@@ -243,23 +243,23 @@
 
 :root,
 .theme-classic {
-    --color-primary: #C0825E;
-    --color-primary-light: #D4A07E;
-    --color-primary-dark: #A06A48;
-    --color-secondary: #D5C9B8;
-    --color-dark: #2C2421;
-    --color-light: #F5F0EB;
-    --color-bg: #FAF8F5;
-    --color-accent: #8B9A7E;
-    --color-text: #3D3430;
-    --color-text-muted: #8A7E76;
-    --color-border: #E8E0D8;
-    --color-success: #7A9E7E;
-    --color-error: #C4534A;
+    --color-primary: #EC6A5C;
+    --color-primary-light: #F58B7E;
+    --color-primary-dark: #D64E42;
+    --color-secondary: #D9E2EA;
+    --color-dark: #13223A;
+    --color-light: #F4F1EA;
+    --color-bg: #FBFAF7;
+    --color-accent: #2A8C82;
+    --color-text: #26354B;
+    --color-text-muted: #667386;
+    --color-border: #DFE4E8;
+    --color-success: #2A8C82;
+    --color-error: #C94D47;
     --color-white: #FFFFFF;
     --color-card: #FFFFFF;
-    --color-hero-bg: #F0EAE2;
-    --color-section-alt: #F7F3EE;
+    --color-hero-bg: #F1F3F4;
+    --color-section-alt: #F4F1EA;
 
     --font-display: 'Cormorant Garamond', Georgia, serif;
     --font-body: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -269,10 +269,10 @@
     --radius-lg: 20px;
     --radius-xl: 28px;
 
-    --shadow-sm: 0 1px 3px rgba(44, 36, 33, 0.06);
-    --shadow-md: 0 4px 16px rgba(44, 36, 33, 0.08);
-    --shadow-lg: 0 8px 32px rgba(44, 36, 33, 0.1);
-    --shadow-xl: 0 16px 48px rgba(44, 36, 33, 0.12);
+    --shadow-sm: 0 1px 3px rgba(19, 34, 58, 0.06);
+    --shadow-md: 0 8px 24px rgba(19, 34, 58, 0.08);
+    --shadow-lg: 0 16px 40px rgba(19, 34, 58, 0.11);
+    --shadow-xl: 0 24px 64px rgba(19, 34, 58, 0.14);
 }
 
 /* ===== Color Themes ===== */
@@ -1173,3 +1173,16 @@ textarea:focus {
     padding: 0;
     margin-top: 8px;
 }
+
+/* QR Photo Gallery brand mark */
+.logo { gap: 10px; align-items: center; }
+.logo-mark { font-family: var(--font-body); font-size: 1rem; letter-spacing: -0.02em; color: var(--color-dark); font-weight: 500; }
+.logo-mark strong { font-weight: 700; }
+.logo-symbol { width: 25px; height: 25px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3px; flex: 0 0 auto; }
+.logo-symbol i { display: block; border: 3px solid currentColor; border-radius: 2px; }
+.logo-symbol i:nth-child(2) { border-color: var(--color-primary); }
+.logo-symbol i:nth-child(3) { grid-column: 1; }
+.site-nav { background: rgba(251,250,247,.94); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(19,34,58,.07); }
+.btn { font-weight: 600; border-radius: 10px; letter-spacing: 0; }
+.btn-primary { box-shadow: 0 6px 18px rgba(236,106,92,.2); }
+.eyebrow { font-family: var(--font-body); font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .18em; color: var(--color-primary); display: block; }

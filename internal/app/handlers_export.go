@@ -187,12 +187,15 @@ func handleGuestDownloadGallery(e *core.RequestEvent) error {
 	if err != nil {
 		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
 	}
+	if !eventGalleryActive(event) {
+		return renderHTMLError(e, http.StatusGone, "Gallery Expired", "This gallery's one-year availability period has ended.")
+	}
 	// Guest downloads are a paid feature; the owner-only /download/{id} route
 	// stays open so hosts can always retrieve their own photos.
 	if !eventOwnerPaid(e.App, event) {
 		return renderHTMLError(e, http.StatusForbidden, "Not Available", "Guest gallery downloads are available on the host's paid plan only.")
 	}
-	if event.GetBool("disable_guest_download") {
+	if disableGuestDownloadEnabled(e.App, event) {
 		return renderHTMLError(e, http.StatusForbidden, "Not Available", "The host has disabled guest downloads for this gallery.")
 	}
 
