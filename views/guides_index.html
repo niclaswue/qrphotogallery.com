@@ -1,0 +1,82 @@
+{{define "title"}}{{.Title}}{{end}}
+{{define "description"}}{{.Description}}{{end}}
+{{define "bodyclass"}}guides-index{{end}}
+{{define "head"}}
+<link rel="stylesheet" href="/static/css/landing.css">
+<link rel="stylesheet" href="/static/css/guides.css">
+{{.IndexJSONLD}}
+{{end}}
+
+{{define "content"}}
+<div class="guide-page">
+    {{template "site_nav" .}}
+    <main>
+        <section class="guides-hero">
+            <div class="container-narrow">
+                <span class="eyebrow">{{T "guides.index.eyebrow"}}</span>
+                <h1>{{T "guides.index.h1"}}</h1>
+                <p class="guides-hero-lead">{{T "guides.index.intro"}}</p>
+                <div class="guides-hero-cta">
+                    <a href="{{.LangPrefix}}/create" class="btn btn-primary btn-large">{{printf (T "guides.cta.button") .StandardPrice}} <span aria-hidden="true">→</span></a>
+                    <span class="guides-hero-note">{{T "guides.inline_note"}}</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="guides-group">
+            <div class="container-narrow">
+                <header class="guides-group-head">
+                    <span class="eyebrow">{{T "guides.group.wedding_eyebrow"}}</span>
+                    <h2>{{T "guides.group.wedding_title"}}</h2>
+                    <p>{{T "guides.group.wedding_text"}}</p>
+                </header>
+                <ul class="guides-card-list">
+                    {{range .WeddingGuides}}<li>
+                        <a href="{{$.LangPrefix}}/guides/{{.Slug}}">
+                            <h3>{{.Title}}</h3>
+                            <p>{{.Intro}}</p>
+                            <span class="guides-card-link">{{T "guides.read"}} →</span>
+                        </a>
+                    </li>{{end}}
+                </ul>
+            </div>
+        </section>
+
+        <section class="guides-group guides-group-alt">
+            <div class="container-narrow">
+                <header class="guides-group-head">
+                    <span class="eyebrow">{{T "guides.group.occasion_eyebrow"}}</span>
+                    <h2>{{T "guides.group.occasion_title"}}</h2>
+                    <p>{{T "guides.group.occasion_text"}}</p>
+                </header>
+                <ul class="guides-card-list">
+                    {{range .Occasion}}<li>
+                        <a href="{{$.LangPrefix}}/guides/{{.Slug}}">
+                            <h3>{{.Title}}</h3>
+                            <p>{{.Intro}}</p>
+                            <span class="guides-card-link">{{T "guides.read"}} →</span>
+                        </a>
+                    </li>{{end}}
+                </ul>
+            </div>
+        </section>
+
+        <section class="guide-cta">
+            <div class="container-narrow">
+                <span class="eyebrow">{{T "guides.cta.eyebrow"}}</span>
+                <h2>{{T "guides.cta.title"}}</h2>
+                <p>{{T "guides.cta.text"}}</p>
+                <ul class="guide-cta-list">
+                    <li>{{T "guides.cta.b1"}}</li>
+                    <li>{{T "guides.cta.b2"}}</li>
+                    <li>{{T "guides.cta.b3"}}</li>
+                </ul>
+                <a href="{{.LangPrefix}}/create" class="btn btn-primary btn-large">{{printf (T "guides.cta.button") .StandardPrice}} <span aria-hidden="true">→</span></a>
+                <a href="{{.LangPrefix}}/pricing" class="guide-cta-compare">{{T "guides.cta.compare"}} →</a>
+            </div>
+        </section>
+    </main>
+    {{template "site_footer" .}}
+</div>
+<script src="/static/js/mobile-nav.js"></script>
+{{end}}
