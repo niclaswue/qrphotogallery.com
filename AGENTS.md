@@ -67,3 +67,73 @@ npx playwright test 03-gallery.spec.ts       # single file
 - Template cache: restart the process to see view changes.
 - Adding a locale key: add it to BOTH `en.json` and `de.json` or
   `go test` fails.
+
+## Production deployment (qrphotogallery.com)
+
+Live as a Docker stack on the shared VPS **178.104.252.218** (Ubuntu 24.04),
+under the `qrphotogallery` user (in the `docker` group; no sudo). A second,
+pre-existing stack — **min-pcw** (serves `photochallenge.wedding`, owned by the
+`pcw` user in `/home/pcw/min-pcw`) — shares this host. Both stay isolated except
+two deliberately shared pieces: the **reverse proxy** and the **watchtower**.
+Everything qrphotogallery lives in `~/qrphotogallery/` (config, compose, helper
+scripts). Superuser is bootstrapped from `.env` at `https://qrphotogallery.com/_/`.
+
+### Topology (why it's built this way)
+Only one process can own :80/:443, and min-pcw's Caddy already does (auto
+Let's Encrypt). So qrphotogallery runs **no Caddy of its own**:
+
+```
+Internet :443 ─▶ min-pcw-caddy (shared edge, network min-pcw_default)
+                 ├─ photochallenge.wedding ─▶ app:8090      (min-pcw)
+                 └─ qrphotogallery.com      ─▶ qrapp:8090   (qr-app)
+```
+
+Two shared-host traps this setup was built around (do not regress):
+- **Service is named `qrapp`, never `app`.** Compose auto-adds the *service
+  name* as a network alias on every attached network. On the shared
+  `min-pcw_default`, an `app` alias would collide with min-pcw's own `app` and
+  round-robin photochallenge.wedding traffic into the wrong app.
+- **One watchtower for the whole host.** Two watchtowers delete each other on
+  startup ("excess instance" cleanup). qrphotogallery runs no watchtower;
+  `qr-app` carries `com.centurylinklabs.watchtower.enable=true` and the single
+  `min-pcw-watchtower` (LABEL_ENABLE, host-wide) updates it — it pulls this
+  private image with the shared `ghcr.io` token. Never start a second watchtower.
+
+### CI/CD (this is "watchtower deployment from GitHub")
+push to `main` → `.github/workflows/build.yml` (Go tests + full Playwright must
+pass) → publishes private `ghcr.io/niclaswue/qrphotogallery.com:latest` →
+`min-pcw-watchtower` polls every 60s and redeploys `qr-app`.
+- GHCR pull auth: `~/.docker/config.json` for both `qrphotogallery` and `pcw`
+  holds a read `ghcr.io` token (same `niclaswue` token; it can pull this image).
+- The CI `test` job installs **typst** (poster endpoint 500s without it) — keep it.
+
+### Operate (on the VPS, as `qrphotogallery`)
+```bash
+cd ~/qrphotogallery
+docker compose pull && docker compose up -d          # manual redeploy
+docker compose logs -f qrapp                          # app logs
+docker exec min-pcw-caddy wget -qO- http://qrapp:8090/api/health   # edge→app
+./add-caddy-block.sh        # add qrphotogallery.com to shared Caddy (see below)
+./rollback-caddy-block.sh   # revert that Caddy edit
+```
+`add-caddy-block.sh` backs up min-pcw's Caddyfile, appends the
+`qrphotogallery.com` + `www` blocks (from `caddy-qrphotogallery.snippet`),
+`caddy validate`s, then graceful `caddy reload` — photochallenge.wedding never
+restarts. Run it **only after DNS points at the box** (otherwise Caddy burns
+Let's Encrypt failed-validation attempts). Edits go through a root container
+because the Caddyfile is pcw-owned; never bind :80/:443 with a second proxy.
+
+### DNS + TLS
+Namecheap → qrphotogallery.com Advanced DNS: `A @ → 178.104.252.218`,
+`A www → 178.104.252.218`; remove the parking/URL-redirect records, leave MX.
+TLS issues automatically once DNS resolves here and the Caddy block is live.
+
+### R2 object storage (staged, wire up later)
+1. `config.json`: `"s3": {"enabled": true, "endpoint":
+   "https://<accountid>.r2.cloudflarestorage.com", "bucket": "qrphotogallery",
+   "region": "auto"}`.
+2. `.env`: fill `S3_ACCESS_KEY_ID/SECRET`, `S3_REGION=auto`, `S3_ENDPOINT`,
+   `S3_BUCKET` (placeholders already present).
+3. `docker compose up -d`.
+For nightly `pb_data` backups to R2, fill `BACKUP_S3_*` and add the `backup`
+service (offen/docker-volume-backup) from `deploy/docker-compose.yml`.
