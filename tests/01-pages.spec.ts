@@ -12,17 +12,18 @@ test.describe('Public product pages', () => {
     await expect(page).toHaveTitle(/QR Photo Gallery/i);
     await expect(page.locator('h1')).toContainText(/One QR code/i);
     await expect(page.locator('.hero-subtitle')).toContainText(/Guests/i);
-    await expect(page.locator('.hero-actions a.btn-primary')).toHaveAttribute('href', '/payment?plan=standard');
-    await expect(page.locator('.how-section .step')).toHaveCount(3);
+    await expect(page.locator('.hero-actions a.btn-primary')).toHaveAttribute('href', '/create');
+    await expect(page.locator('.how-section .steps article')).toHaveCount(3);
     await expect(page.locator('.feature-list article')).toHaveCount(4);
+    expect(await page.locator('body').innerText()).not.toMatch(/\[[a-z_]+\.[^\]]+\]/i);
   });
 
   test('anonymous navigation exposes pricing, login, and create CTA', async ({ page }) => {
     await page.goto('/');
     const nav = page.locator('nav.site-nav').first();
     await expect(nav.locator('a[href="/login"]')).toBeVisible();
-    await expect(nav.locator('a[href="/pricing"]')).toHaveCount(2);
-    await expect(nav.locator('a.btn-nav[href="/pricing"]')).toContainText(/Create/i);
+    await expect(nav.locator('a[href="/pricing"]')).toHaveCount(1);
+    await expect(nav.locator('a.btn-nav[href="/create"]')).toContainText(/Create/i);
     await expect(page.locator('footer a[href="/legal"]')).toBeVisible();
   });
 
@@ -36,6 +37,7 @@ test.describe('Public product pages', () => {
     await expect(cards.nth(0)).toHaveClass(/price-card-featured/);
     await expect(cards.nth(1)).toContainText('€29');
     await expect(cards.nth(1).locator('a[href*="/payment?plan=premium"]')).toBeVisible();
+    await expect(page.locator('main')).not.toContainText(/prompt|challenge|theme/i);
   });
 
   test('English legal page renders all policy sections', async ({ page }) => {

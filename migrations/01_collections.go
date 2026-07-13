@@ -13,10 +13,9 @@ import (
 // Collections:
 //
 //   - users    (auth) — hosts. tier drives feature gating (see helpers.go).
-//   - events   — one per party/wedding/venue. Owns prompts and uploads.
-//   - prompts  — the photo tasks of an event. Events that are plain drop-zones
-//     (a simple gallery, a guestbook) still have one prompt — the upload flow
-//     always binds a submission to a prompt.
+//   - events   — one per gallery. Owns one hidden upload bucket and its files.
+//   - prompts  — inherited upload-bucket storage. The product creates exactly
+//     one per event and never exposes it in the UI.
 //   - uploads  — guest submissions. `image` is the original file; `display`
 //     is an optional browser-friendly JPEG rendition (HEIC transcodes).
 //
@@ -63,11 +62,8 @@ func init() {
 			events.Fields.Add(&core.TextField{Name: "title", Required: true})
 			events.Fields.Add(&core.TextField{Name: "event_date"})
 			events.Fields.Add(&core.TextField{Name: "lang"})
-			events.Fields.Add(&core.TextField{Name: "design_id", Required: true})
-			events.Fields.Add(&core.BoolField{Name: "single_qr_mode"})
-			// Paid guest-flow toggles; only take effect while the owner is on
-			// a paid plan (see helpers.go).
-			events.Fields.Add(&core.BoolField{Name: "lock_after_submit"})
+			// Commercial guest controls only take effect while the owner remains
+			// on that plan (see helpers.go).
 			events.Fields.Add(&core.BoolField{Name: "disable_guest_download"})
 			events.Fields.Add(&core.BoolField{Name: "collect_guest_name"})
 			events.Fields.Add(&core.TextField{Name: "owner", Required: true})
@@ -83,10 +79,9 @@ func init() {
 			prompts := core.NewBaseCollection("prompts")
 			prompts.Fields.Add(&core.TextField{Name: "event", Required: true})
 			prompts.Fields.Add(&core.TextField{Name: "text", Required: true})
-			// sort_order is intentionally not required: 0 is a valid value.
+			// Kept for compatibility with the inherited schema; new galleries
+			// always store one bucket at position 1.
 			prompts.Fields.Add(&core.NumberField{Name: "sort_order"})
-			// show_count backs the single-QR rotation (least-shown tie-break).
-			prompts.Fields.Add(&core.NumberField{Name: "show_count"})
 			prompts.Fields.Add(&core.AutodateField{Name: "created", OnCreate: true})
 			prompts.Fields.Add(&core.AutodateField{Name: "updated", OnUpdate: true})
 			prompts.AddIndex("idx_prompts_event", false, "event", "")

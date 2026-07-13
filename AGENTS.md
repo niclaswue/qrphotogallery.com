@@ -3,17 +3,16 @@
 Guidance for AI coding agents (and humans) working in this repository.
 `CLAUDE.md` is a symlink to this file.
 
-# template-qr-photo
+# QR Photo Gallery
 
-A runnable template for QR-code event media businesses: guests scan a
-printed QR code, get a photo prompt in their phone browser, and upload a
-shot; the host manages events from a dashboard and downloads the gallery.
-Extracted from PhotoChallenge Wedding (min-pcw), which runs the same stack
-in production.
+A focused QR event gallery: guests scan one printed QR code, upload photos
+and videos in their phone browser, and browse the flat shared gallery. The
+host manages one QR, all uploads, downloads, and settings from one dashboard.
+There are no prompts, themes, or card decks in the product UI.
 
 Start with `README.md` (quickstart + adaptation checklist), then
-`docs/ARCHITECTURE.md` (system design), `docs/ADAPTING.md` (per-product
-build plans + porting guides), `docs/DEPLOY.md`, `docs/DESIGN.md`.
+`docs/ARCHITECTURE.md` (system design), `docs/ADAPTING.md` (product variants),
+`docs/DEPLOY.md`, `docs/DESIGN.md`.
 
 ## Design principles
 
@@ -34,12 +33,11 @@ Lemon Squeezy payments, optional Google OAuth + PostHog, Playwright tests.
 ```bash
 go build -o app ./cmd/app            # build (package lives under cmd/app)
 ./app serve                          # dev server on :8090
-go vet ./... && go test ./...        # unit tests (locale parity, zip, cookies, typst)
+go vet ./... && go test ./...        # unit tests (locale parity, zip, uploads, typst)
 go test ./internal/app -run TestName
 
 cd tests && npm install && npm test  # Playwright suite — needs ./app serve running
-npx playwright test 03-challenge.spec.ts     # single file
-go run ./cmd/preview-cards           # card preview WebPs (needs pdftoppm, cwebp)
+npx playwright test 03-gallery.spec.ts       # single file
 ```
 
 ## Architecture in five lines
@@ -52,12 +50,12 @@ go run ./cmd/preview-cards           # card preview WebPs (needs pdftoppm, cwebp
   pre-launch and delete `pb_data/`; the public record API is locked to
   superusers, all access control lives in the handlers.
 - Localised routing: default lang at bare paths, others under `/<lang>/…`;
-  `renderWithBase` binds per-request `T`/`THTML`; locale bundles must stay
-  key-identical (enforced by `TestLocaleParity`).
-- Guest flow: `/e/{id}` single-QR dispatcher (bitset cookie rotation) and
-  `/e/{id}/{promptID}` per-prompt upload; both unauthenticated by design.
-- Print: `pdf.go` builds a `printJob`, `pdf_typst.go` shells out to
-  `typst compile` with templates from `templates/print/`.
+  templates are cached per page/language with `T`/`THTML` bound before parse;
+  locale parity and referenced keys are test-enforced.
+- Guest flow: `/e/{id}` is the combined unauthenticated uploader and flat
+  gallery. Each event has one hidden prompt record only as a storage bucket.
+- Print: `pdf.go` builds the fixed single-QR poster job; `pdf_typst.go` shells
+  out to `typst compile` with `templates/print/poster.typ`.
 
 ## Things that bite
 

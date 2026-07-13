@@ -1,89 +1,93 @@
-# Base design & theming
+# Design system
 
-The template ships one polished, coherent look rather than many mediocre
-options. Rebranding is a matter of swapping tokens in three places — the
-structure never changes.
+The product has one coherent visual identity. Hosts do not choose themes and
+events do not alter the guest page palette. Rebranding therefore changes the
+product once rather than introducing another settings surface.
 
-## 1. Site chrome — CSS custom properties
+## Web tokens
 
-All site styling hangs off the token block at the top of the `:root`
-section in `pb_public/static/css/main.css` (~line 244):
+Shared tokens are at the top of `pb_public/static/css/main.css`:
 
 ```css
-:root, .theme-classic {
-    --color-primary: #C0825E;   /* brand terracotta — buttons, links, accents */
-    --color-bg: #FAF8F5;        /* warm off-white page background */
-    --color-dark / -text / -muted / -border / -success / -error ...
-    --font-display: 'Cormorant Garamond', Georgia, serif;
-    --font-body: 'Jost', sans-serif;
-    --radius-* / --shadow-*     /* geometry & depth scale */
+:root {
+    --color-primary: #e3604d;
+    --color-primary-dark: #c94737;
+    --color-primary-soft: #fff0ec;
+    --color-dark: #11243a;
+    --color-text: #24364a;
+    --color-text-muted: #68778a;
+    --color-bg: #fbfaf7;
+    --color-card: #fff;
+    --color-section-alt: #f2f5f4;
+    --color-border: #dfe5e7;
+    --font-display: "Cormorant Garamond", Georgia, serif;
+    --font-body: "Jost", sans-serif;
 }
 ```
 
-Rebrand = change `--color-primary` (+ its light/dark shades), maybe
-`--color-bg`, and you're 80 % done. Alternative full palettes
-(`.theme-sage`, `.theme-rose`, `.theme-navy`, …) sit right below the
-`:root` block — either promote one to `:root` or set the class on `<body>`.
+Changing the primary, dark, background, and muted colors updates buttons,
+navigation, forms, cards, gallery chrome, and focus states. Keep sufficient
+contrast and update the `theme-color` meta value in `views/base.html` plus the
+colors in `pb_public/static/favicon.svg` at the same time.
 
-Also update `theme-color` in `views/base.html` (mobile browser chrome) and
-`pb_public/static/favicon.svg`.
+## Typography
 
-### Fonts
+The interface pairs Cormorant Garamond for large editorial headings with Jost
+for UI and body copy. WOFF2 files are self-hosted in
+`pb_public/static/fonts/`; `@font-face` rules live at the beginning of
+`main.css`, and `base.html` preloads the critical files.
 
-The pairing is **Cormorant Garamond** (display serif) + **Jost** (body
-sans), self-hosted as woff2 subsets in `pb_public/static/fonts/` with
-`@font-face` rules at the top of `main.css` and preloads in `base.html`. To
-swap: download woff2 subsets (google-webfonts-helper works well), replace
-the `@font-face` blocks and the two `--font-*` tokens, update the preloads.
+To change fonts, replace the WOFF2 assets, update those declarations and the
+two font tokens, then inspect landing, create, pricing, dashboard, and guest
+gallery pages at desktop and phone widths. Large translated headings are the
+most likely place for a new typeface to change layout.
 
-### CSS layout
+## Stylesheet boundaries
 
-Per-page stylesheets keep the cascade small: `main.css` (tokens, reset,
-nav/footer, buttons, forms) is on every page; `landing.css`, `create.css`,
-`pricing.css`, `app.css` (authed dashboard), `challenge.css` (guest pages),
-`auth.css` load per page via each view's `head` block.
+- `main.css` — tokens, reset, navigation, footer, shared buttons/forms,
+  language picker, and consent panel
+- `landing.css` — landing content and reusable FAQ sections
+- `create.css` — the name/date setup page
+- `pricing.css` — Personal and Commercial offer comparison
+- `app.css` — authenticated event list and unified host dashboard
+- `gallery.css` — combined guest uploader, flat media grid, and lightbox
+- `auth.css` — login, registration, password reset, and shared errors
 
-## 2. Event palettes — shared by web and print
+Each page template declares only the page sheets it needs. Responsive rules
+live with their owning components.
 
-`internal/app/designs.go` defines the five palettes hosts can pick per
-event (classic, romantic, boho, modern, garden): five hex values each
-(primary/secondary/accent/background/text). They theme:
+## Product imagery
 
-- the guest-facing pages (inline styles from the `Design` template data),
-- the printed card deck and poster (passed to Typst as `printDesign`).
+`pb_public/static/img/hero-gallery.webp` is the primary landing visual and
+`og-default.jpg` is the social sharing image. Keep meaningful image dimensions
+in the HTML to prevent layout shifts and compress replacements before commit.
+The logo mark is CSS/SVG-native and should remain legible at the small mobile
+navigation size.
 
-Because both surfaces read the same struct, print material always matches
-the guest pages. Add/replace palettes by editing that one slice — the create
-form, overview picker, and print pipeline pick changes up automatically.
-Keep `classic` as the first entry (it's the fallback for unknown IDs).
+## QR poster
 
-## 3. Print — Typst templates
+`templates/print/poster.typ` is the only print layout. It receives a fixed
+product palette from `posterPalette` in `internal/app/pdf.go`; that palette is
+not stored on events or exposed as a setting. The poster uses bundled Fraunces
+and Space Grotesk TTF files from `data/fonts/`, independently of the web font
+files.
 
-`templates/print/`:
+Title text is auto-fitted into a bounded region so long event names cannot
+push the QR off the A4 page. Preserve that guarantee when adjusting the
+template. Verify changes with:
 
-- `classic.typ` — the card deck (A4 sheets, 8 cards each, duplex-mirrored
-  backs, crop marks) + single-card preview modes. Fonts: Fraunces (display)
-  + Space Grotesk (labels), bundled in `data/fonts/`.
-- `poster.typ` — the single-QR poster (A4).
-- `_shared/` — sheet layout, palette conversion, and `auto-fit-text` (steps
-  the font size down until a block fits its budget — the reason no host
-  input can ever overflow a card; preserve this when editing).
+```bash
+go test ./internal/app -run TestRenderTypstPoster
+```
 
-Per-design print layouts are supported: `renderTypstCards` looks for
-`templates/print/<design-id>.typ` and falls back to `classic.typ` (with the
-selected palette still applied). So a new visual direction = one new .typ
-file, no Go changes.
+## Visual QA checklist
 
-Print fonts live in `data/fonts/` (TTF, read by `typst --font-path`); the
-woff2 files in `pb_public/static/fonts` are the *web* copies — they're
-separate on purpose.
+After a meaningful UI change, inspect at least:
 
-## Design intent
-
-The default look is intentionally "editorial, warm, print-adjacent" — it
-photographs well next to real stationery and reads premium at small sizes.
-When adapting, decide the mood first (a kids' birthday product and an audio
-guestbook for weddings shouldn't share a palette), swap tokens, then check
-the three surfaces in one pass: landing page, guest upload page, printed
-poster. `go run ./cmd/preview-cards` regenerates card imagery for marketing
-pages.
+- English and German landing/create/pricing pages;
+- mobile navigation and all primary CTAs;
+- empty and populated guest galleries;
+- upload selection, progress, validation, and success states;
+- empty and populated host dashboards;
+- focus states, lightbox keyboard navigation, and long gallery titles;
+- the rendered PDF poster and scannability of its QR code.

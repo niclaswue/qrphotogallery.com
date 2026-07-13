@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/pocketbase/pocketbase/core"
@@ -91,9 +93,9 @@ func newUpload(t *testing.T, app core.App, event, prompt *core.Record, guestName
 // os.Open, which returned nothing whenever S3 storage was enabled and produced
 // a silent 22-byte empty archive for every event.
 //
-// It also locks in the entry-naming rules the gallery depends on: prompt
-// sort-order prefix, guest-name folding, same-name de-duplication, and
-// preferring the JPEG `display` rendition over the original (HEIC) image.
+// It also locks in the entry-naming rules the gallery depends on: a flat
+// numeric prefix, guest-name folding, same-name de-duplication, and exporting
+// the uploaded original even when a browser rendition exists.
 func TestDownloadGalleryZip(t *testing.T) {
 	app, err := tests.NewTestApp()
 	if err != nil {
@@ -120,7 +122,6 @@ func TestDownloadGalleryZip(t *testing.T) {
 	event := core.NewRecord(events)
 	event.Set("title", "Anna & Marc")
 	event.Set("owner", owner.Id)
-	event.Set("design_id", "classic")
 	if err := app.Save(event); err != nil {
 		t.Fatal(err)
 	}
@@ -142,9 +143,9 @@ func TestDownloadGalleryZip(t *testing.T) {
 	p1 := newPrompt(1, "First dance")
 	p2 := newPrompt(2, "The rings")
 
-	// Two uploads on the same prompt with no guest name collide on the entry
-	// name -> exercises de-duplication. The third is a HEIC upload with a JPEG
-	// display rendition and a non-ASCII guest name.
+	// Uploads may still live on inherited prompt rows, but the archive must be
+	// flat and never expose those internal labels. The third file also checks a
+	// HEIC upload with a JPEG rendition and a non-ASCII guest name.
 	newUpload(t, app, event, p1, "", []byte("PHOTO-ONE"), "one.jpg", nil, "")
 	newUpload(t, app, event, p1, "", []byte("PHOTO-TWO"), "two.jpg", nil, "")
 	newUpload(t, app, event, p2, "Alice Müller", []byte("HEIC-ORIGINAL"), "shot.heic", []byte("JPEG-RENDITION"), "shot.jpg")
@@ -164,27 +165,23 @@ func TestDownloadGalleryZip(t *testing.T) {
 		t.Fatalf("got %d entries %v, want 3", len(entries), names)
 	}
 
-	// The two same-prompt uploads must get distinct names via the -2 suffix,
-	// and between them carry both files' bytes.
-	first := string(entries["1-First dance.jpg"])
-	second := string(entries["1-First dance-2.jpg"])
-	if first == "" || second == "" {
-		t.Fatalf("expected de-duplicated entries 1-First dance.jpg and 1-First dance-2.jpg, got keys %v", keys(entries))
+	var contents []string
+	foundNamedOriginal := false
+	for name, body := range entries {
+		if strings.Contains(name, "First dance") || strings.Contains(name, "The rings") {
+			t.Errorf("archive name %q leaked an internal bucket label", name)
+		}
+		contents = append(contents, string(body))
+		if strings.Contains(name, "Alice Müller") && strings.HasSuffix(name, ".heic") && string(body) == "HEIC-ORIGINAL" {
+			foundNamedOriginal = true
+		}
 	}
-	gotP1 := []string{first, second}
-	sort.Strings(gotP1)
-	if gotP1[0] != "PHOTO-ONE" || gotP1[1] != "PHOTO-TWO" {
-		t.Errorf("prompt-1 entry contents = %v, want [PHOTO-ONE PHOTO-TWO]", gotP1)
+	sort.Strings(contents)
+	if want := []string{"HEIC-ORIGINAL", "PHOTO-ONE", "PHOTO-TWO"}; !slices.Equal(contents, want) {
+		t.Errorf("archive contents = %v, want %v", contents, want)
 	}
-
-	// The HEIC upload: entry named by prompt + guest, carrying the JPEG
-	// rendition's bytes (not the HEIC original) and a .jpg extension.
-	rendition, ok := entries["2-The rings - Alice Müller.jpg"]
-	if !ok {
-		t.Fatalf("missing guest+display entry; got keys %v", keys(entries))
-	}
-	if string(rendition) != "JPEG-RENDITION" {
-		t.Errorf("display entry content = %q, want JPEG-RENDITION (must prefer display over HEIC original)", rendition)
+	if !foundNamedOriginal {
+		t.Fatalf("missing guest-named original; got keys %v", keys(entries))
 	}
 }
 

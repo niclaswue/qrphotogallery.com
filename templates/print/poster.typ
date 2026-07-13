@@ -1,8 +1,8 @@
-// Single-QR poster: one A4 page with a large QR pointing at the event
-// dispatcher (app_url/e/{id}). Themed by the event's design palette — the
-// same palette the printed cards use, so all print material matches.
+// Single-QR poster: one A4 page with a large QR pointing at the canonical
+// gallery URL (app_url/e/{id}). The palette is fixed product styling; hosts
+// do not choose a theme.
 //
-// data.json carries `design` (hex palette, see app.printDesign) and `poster`
+// data.json carries `palette` (fixed colors) and `poster`
 // (final localized texts, see app.posterRender). The QR PNG is pre-generated
 // per job at <render>/qr/event.png.
 //
@@ -16,7 +16,7 @@
 #let render = sys.inputs.at("render", default: ".")
 #let data = json("/" + render + "/data.json")
 #let P = data.poster
-#let pal = palette(data.design)
+#let pal = palette(data.palette)
 
 #let muted(c) = c.transparentize(45%)
 

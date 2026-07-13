@@ -16,16 +16,10 @@ func handlePayment(e *core.RequestEvent) error {
 	}
 
 	plan := e.Request.URL.Query().Get("plan")
-	// The pricing page passes ?variant=<name> when a PostHog feature flag
-	// has swapped the visitor into an alternate price set, so the LS
-	// checkout URL points at the variant's product. Empty or unknown
-	// variants fall back to the default tier set.
-	variant := e.Request.URL.Query().Get("variant")
-	tiers := appConfig.pricingTiers(variant)
 	var tier *TierConfig
-	for i := range tiers {
-		if tiers[i].Name == plan {
-			tier = &tiers[i]
+	for i := range appConfig.Tiers {
+		if appConfig.Tiers[i].Name == plan {
+			tier = &appConfig.Tiers[i]
 			break
 		}
 	}

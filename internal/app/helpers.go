@@ -36,8 +36,7 @@ func formatDisplayTime(value time.Time, lang string) string {
 }
 
 type Tier struct {
-	Name       string
-	MaxPrompts int
+	Name string
 }
 
 func getUserTier(user *core.Record) Tier {
@@ -51,15 +50,15 @@ func getUserTier(user *core.Record) Tier {
 
 	for _, t := range appConfig.Tiers {
 		if t.Name == tierName {
-			return Tier{Name: t.Name, MaxPrompts: t.MaxPrompts}
+			return Tier{Name: t.Name}
 		}
 	}
-	return Tier{Name: "free", MaxPrompts: appConfig.Tiers[0].MaxPrompts}
+	return Tier{Name: "free"}
 }
 
 // isPaidTier reports whether name is one of the paid plans (anything other
-// than the free tier). The paid guest features — multiple uploads per
-// prompt and the guest gallery ZIP download — are gated on this.
+// than the one-file free preview). Repeat/batch uploads and gallery ZIP
+// downloads are gated on this.
 func isPaidTier(name string) bool {
 	return name != "" && name != "free"
 }
@@ -71,8 +70,8 @@ func isPremiumTier(name string) bool { return name == "premium" }
 // tier can't come from e.Auth — it's resolved from the event's owner record.
 // A missing owner (deleted account) counts as free.
 //
-// It gates the paid guest features: multiple uploads per prompt, the guest
-// gallery ZIP, the lock-after-submit toggle and the collect-name toggle.
+// It gates the paid guest features: more than one preview upload and the
+// guest gallery ZIP.
 // Because the per-event toggles only take effect while the owner is paid, a
 // downgrade quietly disables them without touching stored settings.
 func eventOwnerPaid(app core.App, event *core.Record) bool {
@@ -88,19 +87,9 @@ func eventOwnerPremium(app core.App, event *core.Record) bool {
 	return err == nil && owner != nil && isPremiumTier(getUserTier(owner).Name)
 }
 
-// lockAfterSubmitEnabled reports whether the one-upload-per-guest lock is
-// active for an event. Like the guest ZIP download, it's a paid feature:
-// the per-event toggle only takes effect while the owner is on a paid
-// plan, so a downgrade quietly disables it without touching stored settings.
-func lockAfterSubmitEnabled(app core.App, event *core.Record) bool {
-	return event.GetBool("lock_after_submit") && eventOwnerPremium(app, event)
-}
-
 // collectGuestNameEnabled reports whether the guest upload form should ask for
-// (and require) a name for an event. Like the one-upload lock and the guest
-// ZIP download it's a paid feature: the per-event toggle only takes effect
-// while the owner is on a paid plan, so a downgrade quietly disables it
-// without touching stored settings.
+// (and require) a name for an event. It is a Commercial feature, and the
+// stored toggle only takes effect while the owner is on that plan.
 func collectGuestNameEnabled(app core.App, event *core.Record) bool {
 	return event.GetBool("collect_guest_name") && eventOwnerPremium(app, event)
 }
@@ -141,11 +130,8 @@ func safeRedirect(raw, fallback string) string {
 // auth succeeds.
 //
 // The target is URL-encoded before being placed in ?redirect= so URLs with
-// more than one parameter survive intact. Without encoding, a link such as
-// /payment?plan=premium&variant=higher has its &variant= reparsed as a
-// separate parameter of the /register URL and silently dropped — sending the
-// new customer to checkout for the wrong (default) price, a likely reason to
-// abandon and "forget" to pay.
+// more than one parameter survive intact. Without encoding, later parameters
+// are reparsed as part of the /register URL and silently dropped.
 func redirectToRegister(e *core.RequestEvent) error {
 	target := url.QueryEscape(e.Request.URL.RequestURI())
 	return redirectLocalised(e, http.StatusSeeOther, "/register?redirect="+target)

@@ -10,12 +10,12 @@ import (
 )
 
 func handleHome(e *core.RequestEvent) error {
-	free, _, _ := tierLimits(appConfig.Tiers)
+	lang, _ := i18n.FromPath(e.Request.URL.Path)
 	stdCents, premCents := tierPriceCents(appConfig.Tiers)
 	return e.HTML(http.StatusOK, renderWithBase(e, "landing", map[string]any{
-		"FreePromptLimit":  free,
 		"StandardPriceEUR": stdCents / 100,
 		"PremiumPriceEUR":  premCents / 100,
+		"StandardPrice":    formatTierPrice(stdCents, lang),
 	}))
 }
 
@@ -33,37 +33,14 @@ func tierPriceCents(tiers []TierConfig) (standard, premium int) {
 	return
 }
 
-// variantPrices is the price string set for one PostHog-flag-toggled
-// variant. The pricing page renders these into data attributes so a small
-// JS shim can swap the visible price (and the checkout link's ?variant=...)
-// when the matching PostHog feature flag is enabled.
-type variantPrices struct {
-	Name     string
-	Standard string
-	Premium  string
-}
-
 func handlePricing(e *core.RequestEvent) error {
 	lang, _ := i18n.FromPath(e.Request.URL.Path)
-	tiers := appConfig.Tiers
-	free, std, prem := tierLimits(tiers)
-	freePrice, stdPrice, premPrice := tierPrices(tiers, lang)
-
-	variants := make([]variantPrices, 0, len(appConfig.PricingVariants))
-	for _, v := range appConfig.PricingVariants {
-		_, vStd, vPrem := tierPrices(v.Tiers, lang)
-		variants = append(variants, variantPrices{Name: v.Name, Standard: vStd, Premium: vPrem})
-	}
+	_, stdPrice, premPrice := tierPrices(appConfig.Tiers, lang)
 
 	return e.HTML(http.StatusOK, renderWithBase(e, "pricing", map[string]any{
-		"FreePromptLimit":     free,
-		"StandardPromptLimit": std,
-		"PremiumPromptLimit":  prem,
-		"FreePrice":           freePrice,
-		"StandardPrice":       stdPrice,
-		"PremiumPrice":        premPrice,
-		"PricingVariants":     variants,
-		"SupportEmail":        appConfig.SupportEmail,
+		"StandardPrice": stdPrice,
+		"PremiumPrice":  premPrice,
+		"SupportEmail":  appConfig.SupportEmail,
 	}))
 }
 
@@ -75,23 +52,6 @@ func handleLegal(e *core.RequestEvent) error {
 		"Privacy": sections["privacy"],
 		"Refund":  sections["refund"],
 	}))
-}
-
-// tierLimits returns the free/standard/premium MaxPrompts from the given
-// tier set. Used by the pricing page and landing FAQ so copy stays in sync
-// with the real tier limits.
-func tierLimits(tiers []TierConfig) (free, standard, premium int) {
-	for _, t := range tiers {
-		switch t.Name {
-		case "free":
-			free = t.MaxPrompts
-		case "standard":
-			standard = t.MaxPrompts
-		case "premium":
-			premium = t.MaxPrompts
-		}
-	}
-	return
 }
 
 // tierPrices returns locale-formatted display prices for free/standard/

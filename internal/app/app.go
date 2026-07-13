@@ -110,30 +110,25 @@ func registerRoutes(se *core.ServeEvent) {
 
 	registerLocalisedGet(r, "/overview", handleOverviewList)
 	registerLocalisedGet(r, "/overview/{id}", handleOverview)
-	registerLocalisedGet(r, "/gallery/{id}", handleGallery)
+	registerLocalisedGet(r, "/gallery/{id}", handleLegacyOwnerGallery)
 	registerLocalisedPost(r, "/upload/{id}/delete", handleDeleteUpload)
-	registerLocalisedGet(r, "/print/{id}", handlePrintCards)
 	registerLocalisedGet(r, "/poster/{id}", handlePrintPoster)
 	registerLocalisedGet(r, "/qr-image/{id}", handleDownloadQRImage)
-	registerLocalisedGet(r, "/qr-zip/{id}", handleDownloadQRZip)
 	registerLocalisedGet(r, "/download/{id}", handleDownloadGallery)
 
-	registerLocalisedGet(r, "/edit/{id}", handleEditPrompts)
-	registerLocalisedPost(r, "/edit/{id}", handleEditPromptsSubmit)
-	registerLocalisedPost(r, "/design/{id}", handleChangeDesignSubmit)
+	registerLocalisedGet(r, "/edit/{id}", handleEditGallery)
+	registerLocalisedPost(r, "/edit/{id}", handleEditGallerySubmit)
 	registerLocalisedPost(r, "/settings/{id}", handleEventSettingsSubmit)
-	registerLocalisedPost(r, "/qr-mode/{id}", handleToggleQRMode)
 	registerLocalisedPost(r, "/language/{id}", handleEventLangSubmit)
 	registerLocalisedPost(r, "/delete/{id}", handleDeleteEvent)
 
 	// Guest flow — unauthenticated by design. Guests reach these by
 	// scanning a printed QR code; requiring an account would kill the flow.
 	registerLocalisedGet(r, "/e/{id}", handleEventDispatch)
-	registerLocalisedGet(r, "/e/{id}/done", handleEventDone)
-	registerLocalisedGet(r, "/e/{id}/library", handleEventLibrary)
+	registerLocalisedUploadPost(r, "/e/{id}", handleEventDispatch)
+	registerLocalisedGet(r, "/e/{id}/library", handleLegacyGuestGallery)
 	registerLocalisedGet(r, "/e/{id}/download", handleGuestDownloadGallery)
-	registerLocalisedGet(r, "/e/{id}/{promptID}", handleEventUpload)
-	registerLocalisedUploadPost(r, "/e/{id}/{promptID}", handleEventUpload)
+	registerLocalisedGet(r, "/e/{id}/{promptID}", handleLegacyPromptLink)
 
 	registerLocalisedGet(r, "/payment", handlePayment)
 	registerLocalisedGet(r, "/payment/success", handlePaymentSuccess)
@@ -218,8 +213,8 @@ func attachAuthFromCookie(e *core.RequestEvent) error {
 }
 
 // loadAppConfig populates the appConfig global from config.json (or the path
-// in CONFIG_PATH) and overlays Lemon Squeezy creds + per-tier variant IDs
-// from environment variables.
+// in CONFIG_PATH) and overlays integration credentials from environment
+// variables.
 func loadAppConfig() {
 	path := "config.json"
 	if envPath := os.Getenv("CONFIG_PATH"); envPath != "" {
@@ -253,22 +248,6 @@ func loadAppConfig() {
 		envKey := "LEMON_SQUEEZY_PRODUCT_" + strings.ToUpper(cfg.Tiers[i].Name)
 		if v := os.Getenv(envKey); v != "" {
 			cfg.Tiers[i].LemonSqueezyVariantID = v
-		}
-	}
-	// Non-control pricing variants get their own LS variant IDs from env
-	// vars shaped like LEMON_SQUEEZY_PRODUCT_<VARIANT>_<TIER>. Each cell of
-	// the experiment is a separate LS product, so the webhook can map an
-	// incoming variant_id back to a tier regardless of which experiment
-	// the buyer was bucketed into.
-	for vi := range cfg.PricingVariants {
-		variant := cfg.PricingVariants[vi]
-		variantKey := strings.ToUpper(variant.Name)
-		for ti := range variant.Tiers {
-			tierKey := strings.ToUpper(variant.Tiers[ti].Name)
-			envKey := "LEMON_SQUEEZY_PRODUCT_" + variantKey + "_" + tierKey
-			if v := os.Getenv(envKey); v != "" {
-				cfg.PricingVariants[vi].Tiers[ti].LemonSqueezyVariantID = v
-			}
 		}
 	}
 	appConfig = cfg

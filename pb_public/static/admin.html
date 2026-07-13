@@ -96,7 +96,7 @@ tr.click:hover td { background: var(--bg); }
   background: var(--bg); border-radius: 6px; overflow: hidden;
   aspect-ratio: 1 / 1; cursor: zoom-in; position: relative;
 }
-.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb img, .thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb .meta { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,.65)); color: #fff; font-size: 11px; padding: 16px 6px 4px; opacity: 0; transition: opacity .15s; }
 .thumb:hover .meta { opacity: 1; }
 
@@ -106,7 +106,7 @@ tr.click:hover td { background: var(--bg); }
   display: grid; place-items: center; padding: 20px;
   z-index: 100;
 }
-.lightbox img { max-width: 100%; max-height: 80vh; border-radius: 6px; }
+.lightbox img, .lightbox video { max-width: 100%; max-height: 80vh; border-radius: 6px; }
 .lightbox .info { color: #fff; margin-top: 12px; text-align: center; font-size: 13px; max-width: 600px; }
 .lightbox .info a { color: #fff; text-decoration: underline; }
 .lightbox .close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,.15); color: #fff; border: none; border-radius: 8px; padding: 8px 12px; }
@@ -156,8 +156,8 @@ const API = '/api';
 const TOKEN_KEY = 'pcw_admin_token';
 const PAGE_SIZE = 50;
 const THUMB_PAGE = 60;
-// Must match the size registered on the uploads file fields in
-// migrations/13_add_upload_thumbs.go — an unlisted size serves the original.
+// Must match the thumbnail size registered on the uploads file fields in the
+// consolidated migration — an unlisted size serves the original.
 const GRID_THUMB = '480x480';
 const FILE_TOKEN_REFRESH_MS = 4 * 60 * 1000;
 
@@ -215,6 +215,7 @@ function fileURL(collection, recordId, filename, thumb) {
 // present (HEIC uploads — the original can't be decoded by the browser or
 // thumbnailed server-side), otherwise the original `image`.
 function uploadFile(u) { return u.display || u.image; }
+function uploadIsVideo(u) { return /\.(mp4|m4v|mov|webm|avi|mpeg|mpg|3gp)$/i.test(u.image || ''); }
 
 /* ===== Hash routing ===== */
 function parseHash() {
@@ -430,7 +431,7 @@ function viewDashboard(container) {
       listRecords('users', { perPage: 1 }),
       listRecords('events', { perPage: 1 }),
       listRecords('uploads', { perPage: 1 }),
-      listRecords('uploads', { perPage: 500, sort: '-created', fields: 'id,event,image,display,created,collectionId' }),
+      listRecords('uploads', { perPage: 500, sort: '-created', fields: 'id,event,image,display,guest_name,created,collectionId' }),
     ]);
 
     const since = Date.now() - 7 * 86400 * 1000;
@@ -511,13 +512,17 @@ function kpi(label, value, sub) {
 
 function thumb(upload) {
   const t = el('div', { class: 'thumb', on: { click: () => openLightbox(upload) } });
-  const img = el('img', {
-    src: fileURL(upload.collectionId || 'uploads', upload.id, uploadFile(upload), GRID_THUMB),
-    alt: '',
-    loading: 'lazy',
-    decoding: 'async',
-  });
-  t.appendChild(img);
+  if (uploadIsVideo(upload)) {
+    t.appendChild(el('video', {
+      src: fileURL(upload.collectionId || 'uploads', upload.id, uploadFile(upload)) + '#t=0.1',
+      muted: '', playsinline: '', preload: 'metadata',
+    }));
+  } else {
+    t.appendChild(el('img', {
+      src: fileURL(upload.collectionId || 'uploads', upload.id, uploadFile(upload), GRID_THUMB),
+      alt: '', loading: 'lazy', decoding: 'async',
+    }));
+  }
   const meta = el('div', { class: 'meta' }, relTime(upload.created));
   t.appendChild(meta);
   return t;
@@ -528,8 +533,11 @@ async function openLightbox(upload) {
   const lb = el('div', { class: 'lightbox', on: { click: (e) => { if (e.target === lb) lb.remove(); } } });
   const close = el('button', { class: 'close', on: { click: () => lb.remove() } }, 'Close');
   lb.appendChild(close);
-  const img = el('img', { src: fileURL(upload.collectionId || 'uploads', upload.id, uploadFile(upload)), alt: '', loading: 'lazy', decoding: 'async' });
-  lb.appendChild(img);
+  if (uploadIsVideo(upload)) {
+    lb.appendChild(el('video', { src: fileURL(upload.collectionId || 'uploads', upload.id, uploadFile(upload)), controls: '', autoplay: '', playsinline: '' }));
+  } else {
+    lb.appendChild(el('img', { src: fileURL(upload.collectionId || 'uploads', upload.id, uploadFile(upload)), alt: '', loading: 'lazy', decoding: 'async' }));
+  }
   const info = el('div', { class: 'info' }, 'Loading metadata…');
   lb.appendChild(info);
   document.body.appendChild(lb);
@@ -537,18 +545,11 @@ async function openLightbox(upload) {
   document.addEventListener('keydown', onKey);
 
   try {
-    const [event] = await Promise.all([ getEvent(upload.event) ]);
-    let promptText = '';
-    if (upload.prompt) {
-      try {
-        const p = await api(`/collections/prompts/records/${encodeURIComponent(upload.prompt)}`);
-        promptText = p.text || '';
-      } catch (_) {}
-    }
+    const event = await getEvent(upload.event);
     info.innerHTML = '';
     const lines = [
       event ? event.title : upload.event,
-      promptText,
+      upload.guest_name ? `Uploaded by ${upload.guest_name}` : '',
       fmtDate(upload.created),
       upload.image,
     ].filter(Boolean);
@@ -589,18 +590,13 @@ function viewEvents(container) {
       const counts = await Promise.all(data.items.map(c =>
         listRecords('uploads', { perPage: 1, filter: `event = ${JSON.stringify(c.id)}` }).then(r => r.totalItems).catch(() => 0)
       ));
-      const promptCounts = await Promise.all(data.items.map(c =>
-        listRecords('prompts', { perPage: 1, filter: `event = ${JSON.stringify(c.id)}` }).then(r => r.totalItems).catch(() => 0)
-      ));
-
       const wrap = el('div', { class: 'table-wrap' });
       const tbl = el('table', { class: 'collapse' });
       tbl.appendChild(el('thead', null, el('tr', null, [
         el('th', null, 'Event'),
         el('th', null, 'Owner'),
-        el('th', null, 'Design'),
-        el('th', { class: 'num' }, 'Prompts'),
         el('th', { class: 'num' }, 'Uploads'),
+        el('th', null, 'Language'),
         el('th', null, 'Created'),
       ])));
       const tb = el('tbody');
@@ -608,9 +604,8 @@ function viewEvents(container) {
         const tr = el('tr', { class: 'click', on: { click: () => go('/events/' + c.id) } });
         tr.appendChild(el('td', { dataset: { label: 'Event' } }, c.title || '—'));
         tr.appendChild(el('td', { dataset: { label: 'Owner' } }, owners[i] ? owners[i].email : c.owner));
-        tr.appendChild(el('td', { dataset: { label: 'Design' } }, c.design_id || '—'));
-        tr.appendChild(el('td', { class: 'num', dataset: { label: 'Prompts' } }, String(promptCounts[i])));
         tr.appendChild(el('td', { class: 'num', dataset: { label: 'Uploads' } }, String(counts[i])));
+        tr.appendChild(el('td', { dataset: { label: 'Language' } }, (c.lang || 'en').toUpperCase()));
         tr.appendChild(el('td', { dataset: { label: 'Created' } }, fmtDate(c.created)));
         tb.appendChild(tr);
       });
@@ -640,9 +635,8 @@ function pager(data, onGo) {
 /* ===== Event detail ===== */
 function viewEventDetail(container, id) {
   withLoading(container, async () => {
-    const [event, prompts, uploads] = await Promise.all([
+    const [event, uploads] = await Promise.all([
       getEvent(id),
-      listRecords('prompts', { perPage: 500, sort: 'sort_order', filter: `event = ${JSON.stringify(id)}` }),
       listRecords('uploads', { perPage: 500, sort: '-created', filter: `event = ${JSON.stringify(id)}` }),
     ]);
 
@@ -662,38 +656,13 @@ function viewEventDetail(container, id) {
     const addRow = (k, v) => { const r = el('div'); r.style.display = 'flex'; r.style.justifyContent = 'space-between'; r.style.padding = '4px 0'; r.appendChild(el('span', { class: 'mono' }, k)); r.appendChild(el('span', null, v || '—')); dl.appendChild(r); };
     addRow('ID', event.id);
     addRow('Owner', owner ? owner.email : event.owner);
-    addRow('Design', event.design_id);
+    addRow('Event date', event.event_date);
+    addRow('Language', (event.lang || 'en').toUpperCase());
     addRow('Created', fmtDate(event.created));
     addRow('Updated', fmtDate(event.updated));
-    addRow('Prompts', String(prompts.items.length));
     addRow('Uploads', String(uploads.items.length));
     meta.appendChild(dl);
     container.appendChild(meta);
-
-    /* Prompts */
-    const ps = el('div', { class: 'section' });
-    ps.appendChild(el('div', { class: 'section-head' }, el('h3', null, 'Prompts')));
-    if (prompts.items.length === 0) {
-      ps.appendChild(el('div', { class: 'empty' }, 'No prompts.'));
-    } else {
-      const wrap = el('div', { class: 'table-wrap' });
-      const tbl = el('table', { class: 'collapse' });
-      tbl.appendChild(el('thead', null, el('tr', null, [el('th', null, '#'), el('th', null, 'Text'), el('th', { class: 'num' }, 'Uploads')])));
-      const byPrompt = {};
-      uploads.items.forEach(u => byPrompt[u.prompt] = (byPrompt[u.prompt] || 0) + 1);
-      const tb = el('tbody');
-      prompts.items.forEach(p => {
-        const tr = el('tr');
-        tr.appendChild(el('td', { dataset: { label: '#' } }, String((p.sort_order ?? 0))));
-        tr.appendChild(el('td', { dataset: { label: 'Text' } }, p.text || ''));
-        tr.appendChild(el('td', { class: 'num', dataset: { label: 'Uploads' } }, String(byPrompt[p.id] || 0)));
-        tb.appendChild(tr);
-      });
-      tbl.appendChild(tb);
-      wrap.appendChild(tbl);
-      ps.appendChild(wrap);
-    }
-    container.appendChild(ps);
 
     /* Uploads */
     const us = el('div', { class: 'section' });

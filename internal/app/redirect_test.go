@@ -26,8 +26,7 @@ func newGetEvent(target string) (*core.RequestEvent, *httptest.ResponseRecorder)
 // The regression it guards against is raw string concatenation
 // ("/register?redirect=" + RequestURI), which leaks the target's own "&"
 // separators into the /register query and drops every parameter past the
-// first — e.g. the pricing-experiment &variant=, which would send a new
-// customer to checkout for the wrong price.
+// first — e.g. a campaign parameter, which would silently lose attribution.
 func TestRedirectToRegisterPreservesQuery(t *testing.T) {
 	cases := []struct {
 		name         string
@@ -37,9 +36,9 @@ func TestRedirectToRegisterPreservesQuery(t *testing.T) {
 	}{
 		{
 			name:         "multi-param target keeps every param",
-			target:       "/payment?plan=premium&variant=higher",
-			wantLocation: "/register?redirect=" + url.QueryEscape("/payment?plan=premium&variant=higher"),
-			wantRedirect: "/payment?plan=premium&variant=higher",
+			target:       "/payment?plan=premium&campaign=spring",
+			wantLocation: "/register?redirect=" + url.QueryEscape("/payment?plan=premium&campaign=spring"),
+			wantRedirect: "/payment?plan=premium&campaign=spring",
 		},
 		{
 			name:         "single-param target",
@@ -49,9 +48,9 @@ func TestRedirectToRegisterPreservesQuery(t *testing.T) {
 		},
 		{
 			name:         "localised target keeps its lang prefix and params",
-			target:       "/de/payment?plan=premium&variant=lower",
-			wantLocation: "/de/register?redirect=" + url.QueryEscape("/de/payment?plan=premium&variant=lower"),
-			wantRedirect: "/de/payment?plan=premium&variant=lower",
+			target:       "/de/payment?plan=premium&campaign=summer",
+			wantLocation: "/de/register?redirect=" + url.QueryEscape("/de/payment?plan=premium&campaign=summer"),
+			wantRedirect: "/de/payment?plan=premium&campaign=summer",
 		},
 	}
 
@@ -81,8 +80,8 @@ func TestRedirectToRegisterPreservesQuery(t *testing.T) {
 			}
 			// The target's params must NOT have leaked into the /register
 			// query as stray top-level parameters (the old bug).
-			if stray := u.Query().Get("variant"); stray != "" {
-				t.Errorf("variant leaked into /register query as %q", stray)
+			if stray := u.Query().Get("campaign"); stray != "" {
+				t.Errorf("campaign leaked into /register query as %q", stray)
 			}
 			if stray := u.Query().Get("plan"); stray != "" {
 				t.Errorf("plan leaked into /register query as %q", stray)

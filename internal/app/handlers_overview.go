@@ -9,13 +9,34 @@ import (
 	"github.com/niclaswue/template-qr-photo/internal/i18n"
 )
 
-// handleOverviewList renders the signed-in user's events, newest first, with
-// a create CTA. Users with no events yet are sent straight to /create.
+type galleryMediaItem struct {
+	ImageURL  string
+	UploadID  string
+	GuestName string
+	MediaKind string
+}
+
+func galleryMediaItems(app core.App, eventID string) []galleryMediaItem {
+	uploads, err := app.FindRecordsByFilter("uploads", "event = {:eid}", "-created", 10000, 0, dbxParams{"eid": eventID})
+	if err != nil {
+		return nil
+	}
+	items := make([]galleryMediaItem, 0, len(uploads))
+	for _, upload := range uploads {
+		items = append(items, galleryMediaItem{
+			ImageURL:  uploadDisplayURL(upload),
+			UploadID:  upload.Id,
+			GuestName: upload.GetString("guest_name"),
+			MediaKind: uploadMediaKind(upload),
+		})
+	}
+	return items
+}
+
 func handleOverviewList(e *core.RequestEvent) error {
 	if e.Auth == nil {
 		return redirectLocalised(e, http.StatusSeeOther, "/register")
 	}
-
 	events := findOwnedEvents(e)
 	if len(events) == 0 {
 		return redirectLocalised(e, http.StatusSeeOther, "/create")
@@ -25,159 +46,74 @@ func handleOverviewList(e *core.RequestEvent) error {
 		ID          string
 		Title       string
 		EventDate   string
-		SingleQR    bool
-		PromptCount int
 		UploadCount int
 	}
 	rows := make([]eventRow, 0, len(events))
-	for _, ev := range events {
-		prompts, _ := e.App.FindRecordsByFilter("prompts", "event = {:eid}", "", 0, 0, dbxParams{"eid": ev.Id})
-		uploads, _ := e.App.FindRecordsByFilter("uploads", "event = {:eid}", "", 0, 0, dbxParams{"eid": ev.Id})
+	for _, event := range events {
+		uploads, _ := e.App.FindRecordsByFilter("uploads", "event = {:eid}", "", 0, 0, dbxParams{"eid": event.Id})
 		rows = append(rows, eventRow{
-			ID:          ev.Id,
-			Title:       ev.GetString("title"),
-			EventDate:   ev.GetString("event_date"),
-			SingleQR:    ev.GetBool("single_qr_mode"),
-			PromptCount: len(prompts),
+			ID:          event.Id,
+			Title:       event.GetString("title"),
+			EventDate:   event.GetString("event_date"),
 			UploadCount: len(uploads),
 		})
 	}
-
-	return e.HTML(http.StatusOK, renderWithBase(e, "overview_list", map[string]any{
-		"Events": rows,
-	}))
+	return e.HTML(http.StatusOK, renderWithBase(e, "overview_list", map[string]any{"Events": rows}))
 }
 
-// handleOverview renders the event dashboard for the owner: prompt list,
-// upload status per prompt, QR/print downloads and the guest-flow settings.
+// handleOverview is the whole host workspace: the one QR code, gallery stats,
+// settings, and a flat view of every uploaded file. The hidden bucket never
+// leaks into this page.
 func handleOverview(e *core.RequestEvent) error {
 	if e.Auth == nil {
 		return redirectToRegister(e)
 	}
-
 	event, err := findOwnedEvent(e)
 	if event == nil {
 		return err
 	}
 
-	prompts, err := e.App.FindRecordsByFilter("prompts", "event = {:eid}", "sort_order", 1000, 0, dbxParams{"eid": event.Id})
-	if err != nil {
-		return e.InternalServerError("Failed to load prompts", err)
-	}
-
-	type promptWithUpload struct {
-		ID       string
-		Text     string
-		HasImage bool
-	}
-
-	var pList []promptWithUpload
-	for _, p := range prompts {
-		uploads, _ := e.App.FindRecordsByFilter("uploads", "prompt = {:pid}", "-created", 1, 0, dbxParams{"pid": p.Id})
-		pList = append(pList, promptWithUpload{
-			ID:       p.Id,
-			Text:     p.GetString("text"),
-			HasImage: len(uploads) > 0,
-		})
-	}
-
-	design := GetDesignByID(event.GetString("design_id"))
-	if design == nil {
-		design = &Designs[0]
-	}
-	uploads, _ := e.App.FindRecordsByFilter("uploads", "event = {:eid}", "", 0, 0, dbxParams{"eid": event.Id})
+	items := galleryMediaItems(e.App, event.Id)
 	usedGB := float64(galleryUsageBytes(e.App, event.Id)) / float64(1024*1024*1024)
 	expires := event.GetDateTime("created").Time().AddDate(1, 0, 0)
 	lang, _ := i18n.FromPath(e.Request.URL.Path)
 
 	return e.HTML(http.StatusOK, renderWithBase(e, "overview", map[string]any{
 		"Event":                event,
-		"Design":               design,
-		"Designs":              Designs,
-		"Prompts":              pList,
-		"LockAfterSubmit":      event.GetBool("lock_after_submit"),
+		"Items":                items,
+		"HasUploads":           len(items) > 0,
 		"DisableGuestDownload": event.GetBool("disable_guest_download"),
 		"CollectGuestName":     event.GetBool("collect_guest_name"),
-		"SingleQRMode":         event.GetBool("single_qr_mode"),
 		"EventLang":            eventStoredLang(event),
 		"SupportEmail":         appConfig.SupportEmail,
-		"UploadCount":          len(uploads),
+		"UploadCount":          len(items),
 		"StorageUsedGB":        fmt.Sprintf("%.2f", usedGB),
 		"DisplayEventDate":     formatDisplayDate(event.GetString("event_date"), lang),
 		"ExpiresOn":            formatDisplayTime(expires, lang),
 	}))
 }
 
-// handleGallery renders every upload for an event, grouped by prompt.
-// Empty prompts still appear so the owner can see what's missing.
-func handleGallery(e *core.RequestEvent) error {
+// Old owner-gallery bookmarks now land on the uploads section of the unified
+// dashboard.
+func handleLegacyOwnerGallery(e *core.RequestEvent) error {
 	if e.Auth == nil {
 		return redirectToRegister(e)
 	}
-
 	event, err := findOwnedEvent(e)
 	if event == nil {
 		return err
 	}
-
-	prompts, err := e.App.FindRecordsByFilter("prompts", "event = {:eid}", "sort_order", 1000, 0, dbxParams{"eid": event.Id})
-	if err != nil {
-		return e.InternalServerError("Failed to load prompts", err)
-	}
-
-	type galleryItem struct {
-		PromptID   string
-		PromptText string
-		ImageURL   string
-		UploadID   string
-		GuestName  string
-		MediaKind  string
-	}
-
-	var items []galleryItem
-	hasUploads := false
-	for _, p := range prompts {
-		promptText := p.GetString("text")
-		uploads, _ := e.App.FindRecordsByFilter("uploads", "prompt = {:pid}", "-created", 0, 0, dbxParams{"pid": p.Id})
-		if len(uploads) == 0 {
-			items = append(items, galleryItem{PromptID: p.Id, PromptText: promptText})
-			continue
-		}
-		hasUploads = true
-		for _, u := range uploads {
-			items = append(items, galleryItem{
-				PromptID:   p.Id,
-				PromptText: promptText,
-				ImageURL:   uploadDisplayURL(u),
-				UploadID:   u.Id,
-				GuestName:  u.GetString("guest_name"),
-				MediaKind:  uploadMediaKind(u),
-			})
-		}
-	}
-
-	return e.HTML(http.StatusOK, renderWithBase(e, "gallery", map[string]any{
-		"Event":      event,
-		"Items":      items,
-		"HasUploads": hasUploads,
-	}))
+	return redirectLocalised(e, http.StatusSeeOther, "/overview/"+event.Id+"#uploads")
 }
 
-// handleDeleteUpload lets an event owner remove a single upload from the
-// gallery — for moderating a submission that shouldn't be there. Deleting
-// the upload record also removes its stored files. Owner-only; redirects back
-// to the gallery so the change is visible immediately.
 func handleDeleteUpload(e *core.RequestEvent) error {
 	if e.Auth == nil {
 		return redirectToRegister(e)
 	}
-
-	id := e.Request.PathValue("id")
-	upload, err := e.App.FindRecordById("uploads", id)
+	upload, err := e.App.FindRecordById("uploads", e.Request.PathValue("id"))
 	if err != nil {
 		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.upload_not_found")
 	}
-
 	eventID := upload.GetString("event")
 	event, err := e.App.FindRecordById("events", eventID)
 	if err != nil {
@@ -186,10 +122,8 @@ func handleDeleteUpload(e *core.RequestEvent) error {
 	if e.Auth.Id != event.GetString("owner") {
 		return renderHTMLErrorKeys(e, http.StatusForbidden, "error.title.not_authorized", "error.message.upload_access")
 	}
-
 	if err := e.App.Delete(upload); err != nil {
-		return e.InternalServerError("Failed to delete upload", err)
+		return renderHTMLErrorKeys(e, http.StatusInternalServerError, "error.title.could_not_save", "error.message.could_not_save")
 	}
-
-	return redirectLocalised(e, http.StatusSeeOther, "/gallery/"+eventID)
+	return redirectLocalised(e, http.StatusSeeOther, "/overview/"+eventID+"#uploads")
 }

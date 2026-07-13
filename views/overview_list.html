@@ -1,2 +1,11 @@
-{{define "title"}}{{T "events.title"}}{{end}}{{define "description"}}{{T "overview.meta_description"}}{{end}}{{define "robots"}}noindex, nofollow{{end}}{{define "bodyclass"}}overview{{end}}{{define "head"}}<link rel="stylesheet" href="/static/css/app.css">{{end}}
-{{define "content"}}<div class="app-page">{{template "site_nav" .}}<main class="app-main"><div class="app-container"><header class="dashboard-header"><div><span class="eyebrow">{{T "events.eyebrow"}}</span><h1>{{T "events.heading"}}</h1></div><a href="{{.LangPrefix}}/create" class="btn btn-primary">+ {{T "events.create_cta"}}</a></header><div class="dashboard-actions gallery-list-actions">{{range .Events}}<a href="{{$.LangPrefix}}/overview/{{.ID}}" class="dashboard-action"><span>▦</span><div><strong>{{.Title}}</strong><small>{{.UploadCount}} {{T "events.uploads_label"}}{{if .EventDate}} · {{.EventDate}}{{end}}</small></div><i>→</i></a>{{end}}</div></div></main>{{template "site_footer" .}}</div><script src="/static/js/mobile-nav.js"></script>{{end}}
+{{define "title"}}{{T "events.title"}}{{end}}
+{{define "description"}}{{T "overview.meta_description"}}{{end}}
+{{define "robots"}}noindex, nofollow{{end}}
+{{define "bodyclass"}}overview{{end}}
+{{define "head"}}<link rel="stylesheet" href="/static/css/app.css">{{end}}
+{{define "content"}}
+<div class="app-page">{{template "site_nav" .}}<main class="app-main"><div class="app-container">
+    <header class="dashboard-header"><div><span class="eyebrow">{{T "events.eyebrow"}}</span><h1>{{T "events.heading"}}</h1><p>{{T "events.subtitle"}}</p></div><a href="{{.LangPrefix}}/create" class="btn btn-primary">+ {{T "events.create_cta"}}</a></header>
+    <div class="gallery-list">{{range .Events}}<a href="{{$.LangPrefix}}/overview/{{.ID}}" class="gallery-list-item"><span class="gallery-list-icon">▦</span><div><strong>{{.Title}}</strong><small>{{.UploadCount}} {{T "events.uploads_label"}}{{if .EventDate}} · {{.EventDate}}{{end}}</small></div><i>→</i></a>{{end}}</div>
+</div></main>{{template "site_footer" .}}</div><script src="/static/js/mobile-nav.js"></script>
+{{end}}

@@ -6,24 +6,20 @@
   "tiers": [
     {
       "name": "free",
-      "max_prompts": 1,
       "price": "Free",
       "price_cents": 0
     },
     {
       "name": "standard",
-      "max_prompts": 1,
       "price": "€19",
       "price_cents": 1900
     },
     {
       "name": "premium",
-      "max_prompts": 1,
       "price": "€29",
       "price_cents": 2900
     }
   ],
-  "pricing_variants": [],
   "s3": {
     "enabled": false,
     "endpoint": "",

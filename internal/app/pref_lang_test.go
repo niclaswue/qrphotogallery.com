@@ -12,11 +12,11 @@ import (
 // non-HTML routes, already-prefixed URLs and crawlers (no cookie) alone.
 func TestLangPreferenceAction(t *testing.T) {
 	cases := []struct {
-		name        string
-		method      string
-		target      string
-		prefCookie  string
-		wantSet     string
+		name         string
+		method       string
+		target       string
+		prefCookie   string
+		wantSet      string
 		wantRedirect string
 	}{
 		// --- explicit pick from the switcher ---
@@ -34,9 +34,9 @@ func TestLangPreferenceAction(t *testing.T) {
 		},
 		{
 			name:         "setlang keeps other query params",
-			target:       "/pricing?setlang=de&variant=higher",
+			target:       "/pricing?setlang=de&campaign=spring",
 			wantSet:      "de",
-			wantRedirect: "/de/pricing?variant=higher",
+			wantRedirect: "/de/pricing?campaign=spring",
 		},
 		{
 			name:         "setlang on home",
@@ -64,9 +64,9 @@ func TestLangPreferenceAction(t *testing.T) {
 		},
 		{
 			name:         "stored preference keeps existing query",
-			target:       "/pricing?variant=higher",
+			target:       "/pricing?campaign=spring",
 			prefCookie:   "de",
-			wantRedirect: "/de/pricing?variant=higher",
+			wantRedirect: "/de/pricing?campaign=spring",
 		},
 
 		// --- cases that must NOT redirect ---

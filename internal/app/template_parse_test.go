@@ -7,13 +7,12 @@ import "testing"
 func TestPageTemplatesParse(t *testing.T) {
 	t.Chdir("../..")
 	pages := []string{
-		"challenge", "create", "done", "error", "forgot_password",
-		"gallery", "landing", "legal", "library", "login", "overview",
+		"create", "error", "forgot_password", "landing", "legal", "login", "overview",
 		"overview_list", "payment_success", "pricing", "register", "upload",
 	}
 	for _, page := range pages {
 		t.Run(page, func(t *testing.T) {
-			if _, err := getPageTemplate(page); err != nil {
+			if _, err := getPageTemplate(page, "en"); err != nil {
 				t.Fatalf("parse %s: %v", page, err)
 			}
 		})

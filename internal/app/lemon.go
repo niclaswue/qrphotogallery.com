@@ -20,9 +20,8 @@ const lemonCheckoutsURL = "https://api.lemonsqueezy.com/v1/checkouts"
 var lemonHTTPClient = &http.Client{Timeout: 15 * time.Second}
 
 // createLemonCheckout asks Lemon Squeezy to mint a hosted checkout URL for
-// the given variant. user_id and tier travel through the webhook in
-// custom_data so we can upgrade the right account regardless of which
-// PostHog-driven price variant the buyer was on at checkout time.
+// the selected plan variant. user_id and tier travel through the webhook in
+// custom_data so we can upgrade the right account.
 func createLemonCheckout(variantID, userID, userEmail, tierName, redirectURL string) (string, error) {
 	ls := appConfig.LemonSqueezy
 	if ls.APIKey == "" || ls.StoreID == "" {
@@ -91,11 +90,8 @@ func createLemonCheckout(variantID, userID, userEmail, tierName, redirectURL str
 	return parsed.Data.Attributes.URL, nil
 }
 
-// tierNameByVariantID returns the configured tier whose LS variant ID
-// matches, or "" if none match. The lookup walks every pricing variant as
-// well as the default tiers, because each variant has its own LS product.
-// Tier names are shared across variants, so the returned name is enough
-// for the webhook to upgrade the user.
+// tierNameByVariantID returns the configured tier whose Lemon Squeezy variant
+// ID matches, or "" if none match.
 func tierNameByVariantID(variantID string) string {
 	if variantID == "" {
 		return ""
@@ -103,13 +99,6 @@ func tierNameByVariantID(variantID string) string {
 	for _, t := range appConfig.Tiers {
 		if t.LemonSqueezyVariantID == variantID {
 			return t.Name
-		}
-	}
-	for _, v := range appConfig.PricingVariants {
-		for _, t := range v.Tiers {
-			if t.LemonSqueezyVariantID == variantID {
-				return t.Name
-			}
 		}
 	}
 	return ""
@@ -152,8 +141,7 @@ type lemonWebhookPayload struct {
 }
 
 // isKnownTierName guards against trusting an arbitrary string from
-// custom_data. Tier names are stable across pricing variants, so matching
-// against the default tier set is sufficient.
+// custom_data.
 func isKnownTierName(name string) bool {
 	if name == "" {
 		return false
@@ -204,11 +192,9 @@ func handleLemonWebhook(e *core.RequestEvent) error {
 	}
 
 	variantID := fmt.Sprintf("%d", payload.Data.Attributes.FirstOrderItem.VariantID)
-	// Prefer the tier declared in custom_data — it survives reusing the
-	// same LS variant across experiment cells. Fall back to inferring from
-	// the LS variant ID for historical payments created before we passed
-	// `tier`, and for safety reject anything that doesn't match a known
-	// tier name.
+	// Prefer the tier declared in custom_data. Fall back to inferring from the
+	// Lemon Squeezy variant ID for historical payments created before `tier`
+	// was included, and reject anything that isn't a known tier.
 	tierName := payload.Meta.CustomData.Tier
 	if !isKnownTierName(tierName) {
 		tierName = tierNameByVariantID(variantID)

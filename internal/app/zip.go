@@ -89,12 +89,12 @@ func writeGalleryZip(app core.App, fsys *filesystem.System, w io.Writer, uploads
 
 	usedNames := map[string]int{}
 	written := 0
-	for _, upload := range uploads {
-		// Prefer the browser-friendly JPEG rendition (HEIC uploads) so the
-		// downloaded archive is viewable everywhere; fall back to the original.
-		filename := upload.GetString("display")
+	for index, upload := range uploads {
+		// Export the original file exactly as it was uploaded. The optional
+		// display rendition exists only to make HEIC photos viewable in browsers.
+		filename := upload.GetString("image")
 		if filename == "" {
-			filename = upload.GetString("image")
+			filename = upload.GetString("display")
 		}
 		if filename == "" {
 			continue
@@ -107,19 +107,13 @@ func writeGalleryZip(app core.App, fsys *filesystem.System, w io.Writer, uploads
 			continue
 		}
 
-		prompt, _ := app.FindRecordById("prompts", upload.GetString("prompt"))
-		promptText := "unknown"
-		if prompt != nil {
-			promptText = prompt.GetString("sort_order") + "-" + prompt.GetString("text")
-			if len(promptText) > 50 {
-				promptText = promptText[:50]
-			}
-		}
-		// When the host collected names, fold the submitter into the filename so
-		// the contest winner is identifiable straight from the archive listing.
-		label := promptText
+		// The archive is a flat gallery, ordered exactly like the upload query.
+		// Keep the stored original filename and add a numeric prefix so files sort
+		// predictably without exposing the hidden upload bucket.
+		originalBase := strings.TrimSuffix(filepath.Base(filename), filepath.Ext(filename))
+		label := fmt.Sprintf("%04d-%s", index+1, safeZipLabel(originalBase))
 		if gn := strings.TrimSpace(upload.GetString("guest_name")); gn != "" {
-			label = promptText + " - " + zipEntryName(gn)
+			label = fmt.Sprintf("%04d-%s-%s", index+1, safeZipLabel(gn), safeZipLabel(originalBase))
 		}
 		ext := filepath.Ext(filename)
 		baseName := fmt.Sprintf("%s%s", label, ext)
@@ -148,4 +142,23 @@ func writeGalleryZip(app core.App, fsys *filesystem.System, w io.Writer, uploads
 		return written, err
 	}
 	return written, nil
+}
+
+func safeZipLabel(value string) string {
+	var b strings.Builder
+	for _, r := range value {
+		if r < 0x20 || r == 0x7f || r == '/' || r == '\\' {
+			b.WriteByte('_')
+		} else {
+			b.WriteRune(r)
+		}
+	}
+	out := strings.TrimSpace(b.String())
+	if out == "" {
+		out = "upload"
+	}
+	if runes := []rune(out); len(runes) > 80 {
+		out = string(runes[:80])
+	}
+	return out
 }

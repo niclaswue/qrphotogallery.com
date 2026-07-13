@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"net/http"
 	"slices"
 	"strconv"
 	"strings"
@@ -17,22 +16,17 @@ import (
 	"github.com/niclaswue/template-qr-photo/internal/i18n"
 )
 
-// pageTemplates caches parsed page templates keyed by page name. Each cache
-// entry is the static HTML structure with a stub T/THTML that gets shadowed
-// by per-request closures via Clone() on every render — see renderWithBase.
-//
-// Caching the parsed templates skips disk + parse cost on every request
-// while still letting us bind per-request language. We reparse files when
-// the cache misses, which on a first request is fine and during dev means a
-// process restart shows new content immediately.
+// pageTemplates caches one parsed template per page and language. Translation
+// functions are bound before parsing, as required by html/template, so a page
+// can never execute with the empty parser stubs that previously caused blank
+// copy after partial reloads.
 var (
 	pageTemplatesMu sync.RWMutex
 	pageTemplates   = map[string]*template.Template{}
 )
 
-// baseFuncs are the funcs that are safe to register at parse time because
-// they don't depend on the current request. T/THTML are stubs here and get
-// rebound per-request — see renderWithBase.
+// baseFuncs are request-independent helpers. Translation functions are added
+// by getPageTemplate before each language-specific template is parsed.
 var baseFuncs = template.FuncMap{
 	"add": func(a, b any) int {
 		ai, _ := toInt(a)
@@ -43,17 +37,16 @@ var baseFuncs = template.FuncMap{
 	"printf":    fmt.Sprintf,
 	"hasLang":   i18n.IsSupported,
 	"inStrings": func(list []string, item string) bool { return slices.Contains(list, item) },
-	"T":         func(string) string { return "" },
-	"THTML":     func(string) template.HTML { return "" },
 }
 
 func initTemplates() {
 	// Loaded lazily by getPageTemplate; nothing to do up front.
 }
 
-func getPageTemplate(page string) (*template.Template, error) {
+func getPageTemplate(page, lang string) (*template.Template, error) {
+	cacheKey := lang + ":" + page
 	pageTemplatesMu.RLock()
-	if t, ok := pageTemplates[page]; ok {
+	if t, ok := pageTemplates[cacheKey]; ok {
 		pageTemplatesMu.RUnlock()
 		return t, nil
 	}
@@ -65,12 +58,18 @@ func getPageTemplate(page string) (*template.Template, error) {
 		"views/_footer.html",
 		fmt.Sprintf("views/%s.html", page),
 	}
-	tmpl, err := template.New("base.html").Funcs(baseFuncs).ParseFiles(files...)
+	funcs := template.FuncMap{}
+	for name, fn := range baseFuncs {
+		funcs[name] = fn
+	}
+	funcs["T"] = func(key string) string { return i18n.T(lang, key) }
+	funcs["THTML"] = func(key string) template.HTML { return template.HTML(i18n.T(lang, key)) }
+	tmpl, err := template.New("base.html").Funcs(funcs).ParseFiles(files...)
 	if err != nil {
 		return nil, err
 	}
 	pageTemplatesMu.Lock()
-	pageTemplates[page] = tmpl
+	pageTemplates[cacheKey] = tmpl
 	pageTemplatesMu.Unlock()
 	return tmpl, nil
 }
@@ -94,8 +93,7 @@ type langSwitchOption struct {
 
 // renderWithBase renders a page that extends views/base.html. The request's
 // language is derived from the URL prefix (i18n.FromPath); T/THTML are
-// rebound on a fresh clone of the cached template so concurrent requests
-// in different languages can't race.
+// already bound on the cached template for that language.
 func renderWithBase(e *core.RequestEvent, page string, data map[string]any) string {
 	if data == nil {
 		data = map[string]any{}
@@ -171,23 +169,14 @@ func renderWithBase(e *core.RequestEvent, page string, data map[string]any) stri
 		data["PostHog"] = ph
 	}
 
-	tmpl, err := getPageTemplate(page)
+	tmpl, err := getPageTemplate(page, lang)
 	if err != nil {
 		log.Printf("Template parse error for %s: %v", page, err)
 		return fmt.Sprintf("<html><body><h1>Error</h1><p>Failed to render page: %s</p><pre>%v</pre></body></html>", page, err)
 	}
 
-	clone, err := tmpl.Clone()
-	if err != nil {
-		return fmt.Sprintf("<html><body><pre>clone error: %v</pre></body></html>", err)
-	}
-	clone.Funcs(template.FuncMap{
-		"T":     func(key string) string { return i18n.T(lang, key) },
-		"THTML": func(key string) template.HTML { return template.HTML(i18n.T(lang, key)) },
-	})
-
 	var buf bytes.Buffer
-	if err := clone.ExecuteTemplate(&buf, "base.html", data); err != nil {
+	if err := tmpl.ExecuteTemplate(&buf, "base.html", data); err != nil {
 		log.Printf("Template error for page %s: %v", page, err)
 		return fmt.Sprintf("<html><body><h1>Error</h1><p>Failed to render page: %s</p><pre>%v</pre></body></html>", page, err)
 	}
@@ -254,38 +243,4 @@ func renderHTMLErrorKeysLang(e *core.RequestEvent, status int, lang, titleKey, m
 		"ShowLogin":    e.Auth == nil,
 	}
 	return e.HTML(status, renderWithBase(e, "error", data))
-}
-
-// renderQRDownloadLockedError shows an error page when a free-tier owner hits
-// the paid-only bare QR downloads (PNG / ZIP), pushing them toward /pricing.
-// The overview UI hides the download links for free owners, so this is the
-// backstop for direct URL access.
-func renderQRDownloadLockedError(e *core.RequestEvent) error {
-	lang, _ := i18n.FromPath(e.Request.URL.Path)
-	data := map[string]any{
-		"ErrorTitle":   i18n.T(lang, "qr_download.locked.title"),
-		"ErrorMessage": template.HTML(i18n.T(lang, "qr_download.locked.message")),
-		"ShowLogin":    false,
-		"PrimaryCTA": map[string]string{
-			"Href":  i18n.LangPath(lang) + "/pricing",
-			"Label": i18n.T(lang, "qr_download.locked.cta"),
-		},
-	}
-	return e.HTML(http.StatusForbidden, renderWithBase(e, "error", data))
-}
-
-// renderUpgradeError shows an error page when the user exceeds their plan's
-// prompt limit, pushing them toward /pricing.
-func renderUpgradeError(e *core.RequestEvent, maxPrompts int) error {
-	lang, _ := i18n.FromPath(e.Request.URL.Path)
-	data := map[string]any{
-		"ErrorTitle":   i18n.T(lang, "create.upgrade_error.title"),
-		"ErrorMessage": template.HTML(fmt.Sprintf(i18n.T(lang, "create.upgrade_error.message"), maxPrompts)),
-		"ShowLogin":    false,
-		"PrimaryCTA": map[string]string{
-			"Href":  i18n.LangPath(lang) + "/pricing",
-			"Label": i18n.T(lang, "create.upgrade_error.cta"),
-		},
-	}
-	return e.HTML(http.StatusOK, renderWithBase(e, "error", data))
 }

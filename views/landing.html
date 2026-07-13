@@ -1,12 +1,9 @@
 {{define "title"}}{{T "landing.title"}}{{end}}
 {{define "description"}}{{T "landing.meta_description"}}{{end}}
 {{define "bodyclass"}}landing{{end}}
-
 {{define "head"}}
 <link rel="stylesheet" href="/static/css/landing.css">
-<script type="application/ld+json">
-    {"@context":"https://schema.org","@type":"WebApplication","name":"QR Photo Gallery","url":{{.BaseURL}},"applicationCategory":"PhotographyApplication","operatingSystem":"Web","offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":{{.StandardPriceEUR}},"highPrice":{{.PremiumPriceEUR}}}}
-</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"QR Photo Gallery","url":{{.BaseURL}},"applicationCategory":"PhotographyApplication","operatingSystem":"Web","offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":{{.StandardPriceEUR}},"highPrice":{{.PremiumPriceEUR}}}}</script>
 {{end}}
 
 {{define "content"}}
@@ -16,71 +13,67 @@
         <section class="hero">
             <div class="container-wide hero-grid">
                 <div class="hero-copy">
-                    <div class="hero-kicker"><span></span>{{T "landing.overline"}}</div>
-                    <h1>{{T "landing.hero.line1"}} <em>{{T "landing.hero.line2"}}</em> {{T "landing.hero.line3"}}</h1>
+                    <span class="eyebrow">{{T "landing.overline"}}</span>
+                    <h1>{{T "landing.hero.line1"}} <em>{{T "landing.hero.line2"}}</em></h1>
                     <p class="hero-subtitle">{{T "landing.hero.subtitle"}}</p>
                     <div class="hero-actions">
-                        <a href="{{.LangPrefix}}/payment?plan=standard" class="btn btn-primary btn-large">{{T "landing.hero.cta"}} <span aria-hidden="true">→</span></a>
-                        <a href="#how" class="btn btn-quiet">{{T "landing.hero.secondary"}}</a>
+                        <a href="{{.LangPrefix}}/create" class="btn btn-primary btn-large">{{T "landing.hero.cta"}} <span aria-hidden="true">→</span></a>
+                        <a href="#how" class="text-link">{{T "landing.hero.secondary"}} <span aria-hidden="true">↓</span></a>
                     </div>
-                    <p class="hero-note"><span>✓</span> {{T "landing.hero.note"}}</p>
+                    <p class="hero-note"><span aria-hidden="true">✓</span> {{T "landing.hero.note"}}</p>
                 </div>
-                <div class="hero-visual" aria-label='{{T "landing.hero.visual_alt"}}'>
+                <div class="hero-visual">
                     <img src="/static/img/hero-gallery.webp" alt='{{T "landing.hero.image_alt"}}' width="1600" height="1067">
-                    <div class="hero-upload-chip">
-                        <span class="upload-chip-icon">↑</span>
-                        <span><strong>{{T "landing.hero.chip_title"}}</strong><small>{{T "landing.hero.chip_text"}}</small></span>
-                        <i>✓</i>
-                    </div>
                     <div class="hero-qr-card" aria-hidden="true">
-                        <svg viewBox="0 0 29 29"><path fill="#13223A" d="M1 1h8v8H1zm2 2v4h4V3zm17-2h8v8h-8zm2 2v4h4V3zM1 20h8v8H1zm2 2v4h4v-4zM12 2h2v3h3v2h-5zm0 8h3v2h-1v3h-2zm5 1h2v4h-2zm4 1h3v2h-1v2h-3v-2h1zM11 18h3v2h2v2h-2v2h-3zm6 0h2v2h2v-2h2v4h-4v3h-2zm7 6h4v4h-2v-2h-2zm-12 3h3v2h-3zM26 11h2v7h-2z"/></svg>
-                        <small>{{T "landing.hero.qr_label"}}</small>
+                        <span class="mini-qr"><i></i><i></i><i></i><i></i><i></i></span>
+                        <div><strong>{{T "landing.hero.qr_title"}}</strong><small>{{T "landing.hero.qr_text"}}</small></div>
                     </div>
+                    <div class="hero-upload-chip"><span>↑</span><div><strong>{{T "landing.hero.chip_title"}}</strong><small>{{T "landing.hero.chip_text"}}</small></div><i>✓</i></div>
                 </div>
             </div>
         </section>
 
-        <section class="trust-strip">
+        <section class="trust-strip" aria-label='{{T "landing.trust.label"}}'>
             <div class="container-wide trust-grid">
                 <div><strong>100 GB</strong><span>{{T "landing.trust.storage"}}</span></div>
-                <div><strong>1 year</strong><span>{{T "landing.trust.year"}}</span></div>
+                <div><strong>2 GB</strong><span>{{T "landing.trust.files"}}</span></div>
+                <div><strong>1 {{T "landing.trust.year_value"}}</strong><span>{{T "landing.trust.year"}}</span></div>
                 <div><strong>EU</strong><span>{{T "landing.trust.eu"}}</span></div>
-                <div><strong>HD</strong><span>{{T "landing.trust.originals"}}</span></div>
             </div>
         </section>
 
         <section class="how-section" id="how">
             <div class="container-wide">
-                <div class="section-heading"><span>{{T "landing.how.overline"}}</span><h2>{{T "landing.how.title"}}</h2><p>{{T "landing.how.subtitle"}}</p></div>
+                <header class="section-heading"><span class="eyebrow">{{T "landing.how.overline"}}</span><h2>{{T "landing.how.title"}}</h2><p>{{T "landing.how.subtitle"}}</p></header>
                 <div class="steps">
-                    <article class="step"><b>1</b><div class="step-icon">▦</div><h3>{{T "landing.how.step1.title"}}</h3><p>{{T "landing.how.step1.text"}}</p></article>
-                    <article class="step"><b>2</b><div class="step-icon">⌁</div><h3>{{T "landing.how.step2.title"}}</h3><p>{{T "landing.how.step2.text"}}</p></article>
-                    <article class="step"><b>3</b><div class="step-icon">↑</div><h3>{{T "landing.how.step3.title"}}</h3><p>{{T "landing.how.step3.text"}}</p></article>
+                    <article><b>01</b><span class="step-icon">＋</span><h3>{{T "landing.how.step1.title"}}</h3><p>{{T "landing.how.step1.text"}}</p></article>
+                    <article><b>02</b><span class="step-icon qr-step">▦</span><h3>{{T "landing.how.step2.title"}}</h3><p>{{T "landing.how.step2.text"}}</p></article>
+                    <article><b>03</b><span class="step-icon">↑</span><h3>{{T "landing.how.step3.title"}}</h3><p>{{T "landing.how.step3.text"}}</p></article>
                 </div>
             </div>
         </section>
 
-        <section class="simplicity-section">
-            <div class="container-wide simplicity-grid">
-                <div class="phone-demo">
+        <section class="product-section">
+            <div class="container-wide product-grid">
+                <div class="product-preview" aria-hidden="true">
                     <div class="phone-shell">
-                        <div class="phone-bar"></div>
+                        <span class="phone-speaker"></span>
                         <small>{{T "landing.demo.eyebrow"}}</small>
                         <h3>Anna &amp; Marco</h3>
                         <div class="phone-drop"><span>↑</span><strong>{{T "landing.demo.upload"}}</strong><small>JPG · HEIC · PNG · MP4 · MOV</small></div>
                         <button>{{T "landing.demo.button"}}</button>
-                        <p>🔒 {{T "landing.demo.privacy"}}</p>
+                        <div class="phone-gallery"><i></i><i></i><i></i></div>
                     </div>
                 </div>
-                <div class="simplicity-copy">
+                <div class="product-copy">
                     <span class="eyebrow">{{T "landing.features.overline"}}</span>
                     <h2>{{T "landing.features.title"}}</h2>
                     <p class="lead">{{T "landing.features.subtitle"}}</p>
                     <div class="feature-list">
-                        <article><i>01</i><div><h3>{{T "landing.features.f1.title"}}</h3><p>{{T "landing.features.f1.text"}}</p></div></article>
-                        <article><i>02</i><div><h3>{{T "landing.features.f2.title"}}</h3><p>{{T "landing.features.f2.text"}}</p></div></article>
-                        <article><i>03</i><div><h3>{{T "landing.features.f3.title"}}</h3><p>{{T "landing.features.f3.text"}}</p></div></article>
-                        <article><i>04</i><div><h3>{{T "landing.features.f4.title"}}</h3><p>{{T "landing.features.f4.text"}}</p></div></article>
+                        <article><span>01</span><div><h3>{{T "landing.features.f1.title"}}</h3><p>{{T "landing.features.f1.text"}}</p></div></article>
+                        <article><span>02</span><div><h3>{{T "landing.features.f2.title"}}</h3><p>{{T "landing.features.f2.text"}}</p></div></article>
+                        <article><span>03</span><div><h3>{{T "landing.features.f3.title"}}</h3><p>{{T "landing.features.f3.text"}}</p></div></article>
+                        <article><span>04</span><div><h3>{{T "landing.features.f4.title"}}</h3><p>{{T "landing.features.f4.text"}}</p></div></article>
                     </div>
                 </div>
             </div>
@@ -88,15 +81,15 @@
 
         <section class="home-price">
             <div class="container price-banner">
-                <div><span>{{T "landing.price.eyebrow"}}</span><h2>{{T "landing.price.title"}}</h2><p>{{T "landing.price.text"}}</p></div>
-                <div class="price-amount"><strong>€19</strong><small>{{T "landing.price.once"}}</small></div>
-                <a href="{{.LangPrefix}}/payment?plan=standard" class="btn btn-light btn-large">{{T "landing.price.cta"}} →</a>
+                <div><span class="eyebrow">{{T "landing.price.eyebrow"}}</span><h2>{{T "landing.price.title"}}</h2><p>{{T "landing.price.text"}}</p></div>
+                <div class="price-amount"><strong>{{.StandardPrice}}</strong><small>{{T "landing.price.once"}}</small></div>
+                <a href="{{.LangPrefix}}/pricing" class="btn btn-light btn-large">{{T "landing.price.cta"}} →</a>
             </div>
         </section>
 
         <section class="faq-section">
             <div class="container">
-                <div class="section-heading"><span>{{T "landing.faq.overline"}}</span><h2>{{T "landing.faq.title"}}</h2></div>
+                <header class="section-heading"><span class="eyebrow">{{T "landing.faq.overline"}}</span><h2>{{T "landing.faq.title"}}</h2></header>
                 <div class="faq-list">
                     <details><summary>{{T "landing.faq.q1"}}<i>+</i></summary><p>{{T "landing.faq.a1"}}</p></details>
                     <details><summary>{{T "landing.faq.q2"}}<i>+</i></summary><p>{{T "landing.faq.a2"}}</p></details>
@@ -106,9 +99,7 @@
             </div>
         </section>
 
-        <section class="final-cta">
-            <div class="container"><span>✦</span><h2>{{T "landing.final.title"}}</h2><p>{{T "landing.final.subtitle"}}</p><a href="{{.LangPrefix}}/payment?plan=standard" class="btn btn-primary btn-large">{{T "landing.final.cta"}} →</a><small>{{T "landing.final.note"}}</small></div>
-        </section>
+        <section class="final-cta"><div class="container"><span class="eyebrow">{{T "landing.final.eyebrow"}}</span><h2>{{T "landing.final.title"}}</h2><p>{{T "landing.final.subtitle"}}</p><a href="{{.LangPrefix}}/create" class="btn btn-primary btn-large">{{T "landing.final.cta"}} →</a><small>{{T "landing.final.note"}}</small></div></section>
     </main>
     {{template "site_footer" .}}
 </div>

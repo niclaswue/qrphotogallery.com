@@ -1,190 +1,176 @@
 # Architecture
 
-How the template is put together, and the reasoning behind the load-bearing
-decisions. Read this before reshaping the domain model.
+The application is intentionally shaped around one product flow: create a
+gallery, share one QR code, and collect every guest upload in one place.
 
-## The one-binary shape
+## One process, one binary
 
-`cmd/app/main.go` is a one-liner into `app.Run()` (`internal/app/app.go`).
-`Run` loads `.env`, parses `config.json` (env vars override payment/OAuth/
-analytics values), loads i18n bundles and legal markdown, registers the
-consolidated migration, then starts PocketBase. Everything — HTTP server,
-database, file storage, mailer, admin UI (`/_/`), cron — lives in that one
-process. A deploy is: replace binary (or container), restart.
+`cmd/app/main.go` calls `app.Run()` in `internal/app/app.go`. Startup loads
+configuration, translations, and legal content; registers the consolidated
+migration and HTTP routes; then starts PocketBase. The HTTP server, SQLite
+database, file storage, authentication, admin UI, cron jobs, and mailer all
+live in that process.
 
-PocketBase is used as a *framework*, not a backend-as-a-service:
+PocketBase is used as a Go framework rather than as a public backend service:
 
-- **All HTTP routes are ours**, wired in `registerRoutes`; handlers live in
-  `handlers_*.go` split by domain (`auth`, `create`, `settings`, `overview`,
-  `upload`, `export`, `payment`, `pages`, `seo`).
-- **The public record API is closed.** The migration nulls every collection's
-  API rules (superuser-only). Handlers enforce ownership and tier gating in
-  Go. Do not move access control into PocketBase rules — you'd have two
-  systems to keep consistent.
-- What PocketBase buys us: SQLite + migrations, auth records + password
-  reset mail, file storage (local or S3) with thumbnails, the admin UI, and
-  structured logs.
+- routes are registered in `app.go`, with domain handlers in
+  `handlers_*.go`;
+- all public collection API rules are locked to superusers;
+- handlers enforce ownership and paid-feature access;
+- PocketBase provides records, migrations, authentication, storage, mail,
+  logs, and the admin UI.
 
-## Domain model
+## Data model
 
-```
-users (auth)  1 ──< events  1 ──< prompts  1 ──< uploads
+```text
+users  1 ──< events  1 ──< prompts  1 ──< uploads
 ```
 
-- **users** — hosts. `tier` (`free`/`standard`/`premium`) drives feature
-  gating; `signup_lang`/`signup_country`/`auth_provider` are for analytics
-  and lifecycle email; `marketing_opt_out` is consumed by the (docs-only)
-  retargeting module.
-- **events** — one per party/wedding/venue. Carries `title`, `event_date`,
-  `lang`, `design_id` (palette), `single_qr_mode` and the paid guest-flow
-  toggles.
-- **prompts** — the photo tasks. *Every* upload binds to a prompt, even in
-  products without visible prompts (a plain gallery = one prompt). This
-  keeps the pipeline uniform: naming in ZIP exports, per-prompt galleries,
-  the free-tier one-photo cap, single-QR rotation — all hang off prompts.
-- **uploads** — guest submissions. `image` is the original; `display` an
-  optional browser-friendly JPEG rendition (HEIC transcodes); `guest_name`
-  optional attribution.
+The customer-facing model is simply `host → gallery → uploads`. The middle
+`prompts` collection is inherited storage plumbing: every new event gets
+exactly one hidden record named `Gallery uploads`, and every file is attached
+to it. No prompt text or prompt grouping appears in the UI, URLs, ZIP names,
+or print output.
 
-Cross-collection references are plain text ID fields, not PocketBase
-relations — handlers join manually and the record API is closed, so relation
-expansion would buy nothing.
+- **users** — hosts. `tier` is `free`, `standard`, or `premium`; signup
+  metadata supports analytics and optional lifecycle work.
+- **events** — galleries. Stores owner, title, optional date, guest language,
+  the two Commercial controls, and creation timestamps.
+- **prompts** — one hidden upload bucket per newly created event. Existing
+  databases with older prompt records remain readable; all their uploads are
+  flattened by event ID.
+- **uploads** — original media plus optional guest name. HEIC/HEIF files may
+  also receive a browser-friendly JPEG in `display`.
 
-**Migrations:** one consolidated file (`migrations/01_collections.go`).
-While your product is unlaunched, edit it and delete `pb_data/` — no
-migration archaeology. Once real data exists, switch to additive numbered
-migrations (add fields as optional so no backfill is needed). Note that
-PocketBase pre-creates the `users` auth collection, so the migration
-*extends* it idempotently rather than creating it.
+Cross-collection references are text IDs. Handlers join records explicitly,
+which keeps the schema and deletion paths easy to understand.
 
-## Request path for HTML pages
+The pre-launch schema is one consolidated migration,
+`migrations/01_collections.go`. PocketBase creates the `users` collection
+itself, so the migration extends it idempotently. Before launch it is fine to
+edit this migration and recreate `pb_data/`; after launch, use additive
+numbered migrations.
 
-1. Router-level middleware `attachAuthFromCookie` hydrates `e.Auth` from the
-   `pb_auth` cookie (PocketBase's own auth middleware only runs on routes
-   bound with `apis.RequireAuth()`, which plain HTML routes aren't).
-2. `applyLangPreference` makes the nav language switcher sticky
-   (`?setlang=` → cookie → redirect on later bare-URL visits).
-3. The handler loads records, enforces ownership, and calls
-   `renderWithBase(e, "page", data)`.
-4. `renderWithBase` (templates.go) resolves the language from the URL
-   prefix, clones the cached parsed template, rebinds `T`/`THTML` to
-   per-request closures, and injects the standard data (AppName, Auth,
-   canonical/hreflang URLs, PostHog config, …).
+## HTML and translation flow
 
-Template caching means a process restart shows new view content; there is no
-hot reload.
+1. `attachAuthFromCookie` hydrates `e.Auth` for ordinary HTML routes.
+2. `applyLangPreference` persists an explicit language choice.
+3. The handler loads records, checks ownership or public availability, and
+   calls `renderWithBase`.
+4. Templates are cached per page **and language**. `T` and `THTML` are bound
+   to that language before parsing, so a parser stub can never leak blank or
+   bracketed copy into rendered pages.
+5. `renderWithBase` adds common navigation, canonical and `hreflang` URLs,
+   current user/tier data, and optional analytics configuration.
 
-## Localisation is baked into routing
+The default language is served at bare paths and other languages at
+`/<lang>/…`. Adding a language means updating the supported-language metadata,
+adding a complete locale JSON file and flag asset, and translating the legal
+documents. Tests enforce locale parity and scan every template/handler locale
+reference so values such as `[create.eyebrow]` fail CI.
 
-The default language (`en`) serves at the bare path; every other supported
-language is mounted at `/<lang>/…` by `registerLocalisedGet/Post`. Sitemap
-and `hreflang` derive from the same `i18n.SupportedLangs` list, so **adding a
-language is**: append to `SupportedLangs`, add `LangNames`/`LangLocales`
-entries, drop a complete `data/locales/<lang>.json` (the parity test fails
-until it's complete), add a flag SVG. Routes, sitemap, hreflang pick it up.
+Guest pages follow the gallery's stored language, with `?lang=` available for
+QR links. They are `noindex` and omit the site language switcher.
 
-Guest pages are different on purpose: guests follow the **event's** language
-(plus a `?lang=` pin carried in printed QR URLs), the site-wide switcher is
-suppressed there (`GuestPage` flag), and user-specific pages are `noindex`
-and not part of the sitemap.
+## The one-QR guest flow
 
-Webhooks and the OAuth callback mount once at their canonical path (Google
-matches the registered redirect URI exactly; the language survives in a
-cookie).
+`/e/{id}` is the canonical public URL and the only URL encoded in QR output.
 
-## Guest flow and the two QR modes
+- `GET` renders the event title, multi-file uploader, and a flat list of every
+  existing photo and video.
+- `POST` validates a batch, saves it to the hidden bucket, and redirects back
+  to `/e/{id}?uploaded=1#gallery`.
+- The shared gallery supports a keyboard-accessible lightbox and, when the
+  owner permits it, an originals ZIP download.
+- Old `/e/{id}/library` and `/e/{id}/{promptID}` links redirect to the
+  canonical page for backward compatibility.
 
-An event is distributed in one of two modes (`single_qr_mode`, switchable
-any time):
+There is no guest account, prompt selection, rotation cookie, completion
+screen, per-prompt page, theme, or multiple-QR mode.
 
-- **Cards mode**: one printed card per prompt, each QR points at
-  `/e/{id}/{promptID}`.
-- **Single-QR mode**: one poster QR points at `/e/{id}`; the dispatcher
-  hands each scanner the next prompt — sticky per browser via a compact
-  bitset cookie (500 prompts ≈ 63 bytes), rotating by global `show_count`
-  with coverage-first selection (`pickPrompt`).
+Unknown GET paths can reach the ServeMux `/` catch-all, so not-found cases in
+real handlers must render explicit 404 responses.
 
-Both land on the same upload handler. The free-tier cap (one photo per
-prompt), the one-upload-per-guest soft lock, and name collection are
-enforced server-side; the lock is a cookie, so it's a *soft* lock by design
-(owners bypass it when authenticated).
+## Host flow
 
-**Unknown GET paths fall through to the landing page** (Go ServeMux treats
-the `/` pattern as a catch-all). Handlers therefore render their own 404s
-for real not-found cases.
+`/overview/{id}` is the single host workspace. It contains:
 
-## Tier gating
+- the canonical URL and one QR preview;
+- QR PNG and printable poster downloads;
+- upload count, storage usage, and expiry date;
+- one flat media overview with original ZIP download and deletion;
+- gallery language and Commercial controls;
+- title/date editing and gallery deletion.
 
-`helpers.go` is the single home of monetisation logic:
+The old owner `/gallery/{id}` URL redirects to the uploads section of this
+page.
 
-- `getUserTier` reads the user's tier against `config.json` tiers.
-- `isPaidTier` gates host-side features (bare QR downloads).
-- `eventOwnerPaid` resolves the *owner's* tier from an event — used on
-  unauthenticated guest routes (multi-photo, guest ZIP, lock, name field).
-- Paid per-event toggles only take effect while the owner is paid, so a
-  downgrade quietly disables them without mutating stored settings.
+## Plans and limits
 
-Payments: `handlePayment` creates a Lemon Squeezy hosted checkout with
-`user_id`+`tier` in `custom_data`; the webhook (`lemon.go`) verifies the
-HMAC signature and upgrades the user. The pricing-variant machinery
-(PostHog feature flags swap displayed prices and `?variant=` on the checkout
-link) ships but is dormant until you define `pricing_variants` in
-config.json.
+Tier logic is centralized in `helpers.go`:
 
-## Print module
+- **Free** is a functional one-file preview.
+- **Personal (`standard`)** costs €19 once and unlocks repeat/batch uploads,
+  100 GB total storage, originals ZIPs, QR PNG, and poster for private use.
+- **Commercial (`premium`)** costs €29 once and provides the same complete
+  gallery under a commercial license, plus uploader-name collection, public
+  ZIP control, and priority support.
 
-`generateCardsPDF` / `generatePosterPDF` build a `printJob` (event metadata,
-palette, per-prompt QR URLs) and shell out to `typst compile`
-(`pdf_typst.go`). QR PNGs are pre-generated server-side into a per-job temp
-dir under `pb_data/typst/`. The poster and cards share the same palette
-(`designs.go`), so all print material matches the guest pages.
+The server enforces 2 GB per file, 4 GB per request, 100 files per batch,
+100 GB per gallery, and one year of availability. `eventOwnerPaid` is used on
+public guest requests, where there is no authenticated host record. Commercial
+settings only take effect while the owner has the Commercial tier.
 
-`classic.typ` also has `preview-front`/`preview-back` single-card modes used
-by `RenderCardPNG` (the `cmd/preview-cards` marketing-image CLI). Layout
-guarantee: text blocks are auto-fitted (font size steps down until the block
-fits), so no host input can overflow a card or the poster — keep that
-guarantee when editing templates.
+Payments use a Lemon Squeezy hosted checkout. The app passes the user ID and
+tier in checkout custom data; the webhook verifies its signature before
+changing the account tier. Visiting a payment-success URL alone never grants
+access.
 
-`config.json`'s `app_url` is what ends up inside printed QR codes — it must
-be the public URL in production.
+## Media and storage
 
-## Design system
+Upload validation uses magic bytes rather than trusting a filename or MIME
+header. Supported still formats include JPEG, PNG, GIF, WebP, BMP, TIFF, HEIC,
+and HEIF; supported video containers include common MP4/QuickTime, WebM, AVI,
+MPEG, and 3GP variants.
 
-`designs.go` defines five palettes (primary/secondary/accent/background/
-text) used by **both** the web guest pages (inline styles) and the Typst
-print templates (via `printDesign`). The site chrome itself is themed by CSS
-custom properties at the top of `main.css`. See DESIGN.md.
+HEIC/HEIF originals are retained. A bounded background converter may add a
+JPEG rendition for browser display. The shared/owner galleries prefer that
+rendition, while ZIP export streams the original file through PocketBase's
+filesystem abstraction. The same code therefore works with local storage and
+S3-compatible storage.
 
-## Media pipeline
+A daily retention job deletes expired gallery records and their stored files.
+Public access also checks the one-year deadline synchronously, closing the gap
+between expiry and the next cleanup pass.
 
-Uploads are sniffed by magic bytes (`detectImageFormat`) — broad allowlist
-(JPEG/PNG/GIF/WebP/BMP/TIFF/HEIC/HEIF) because phones emit all of them.
-HEIC/HEIF (iPhone default) can't render in browsers, so a background
-goroutine (bounded to 2 concurrent WASM decodes) transcodes a JPEG into the
-`display` field; galleries prefer `display` and fall back to `image`. The
-ZIP export streams through PocketBase's filesystem abstraction so it works
-identically on local disk and S3.
+## Print output
 
-## Config and secrets
+The print module has one job: generate an A4 poster containing the event name,
+optional date, and canonical gallery QR. `pdf.go` builds the fixed print job;
+`pdf_typst.go` invokes `typst compile` with `templates/print/poster.typ`.
 
-- `config.json` (path override: `CONFIG_PATH`) holds public/product config:
-  app name/url, tiers, pricing variants, S3, PostHog key.
-- Secrets come from env only (`LEMON_SQUEEZY_*`, `GOOGLE_CLIENT_*`); `.env`
-  is loaded for dev but **existing env vars always win**, so production
-  deploys can override.
-- Every optional integration is enabled by the presence of its credentials
-  and cleanly absent otherwise (Google button hidden, checkout returns
-  "not configured", no PostHog script tag).
-- `PB_SUPERUSER_EMAIL/PASSWORD` bootstrap an admin on first boot.
+The bare PNG endpoint uses the same canonical URL. `config.json`'s `app_url`
+must therefore be the real public production origin before materials are
+generated.
 
-## Testing strategy
+## Configuration
 
-- **Go unit tests** pin the tricky pure logic: guest-cookie bitset
-  round-trips, ZIP streaming through the storage abstraction (regression
-  test for the S3 empty-archive bug), redirect safety, locale parity,
-  lang-preference middleware, Typst renders (skipped when typst is absent).
-- **Playwright** (`tests/`, 54 tests) drives the current product through the
-  whole funnel, including localized pages, photo/video uploads, tier upgrades via the superuser API
-  (`upgradeToPaid` helper) and multipart upload edge cases.
-- CI (`.github/workflows/build.yml`) runs both before building/pushing the
-  Docker image.
+- `config.json` contains public product configuration: name, URL, prices,
+  storage selection, and optional PostHog values.
+- Lemon Squeezy and Google OAuth secrets come from environment variables.
+- `.env` is loaded for development, but pre-existing environment variables
+  win.
+- Optional integrations disappear cleanly when not configured.
+- `PB_SUPERUSER_EMAIL` and `PB_SUPERUSER_PASSWORD` can bootstrap an admin on
+  first start.
+
+## Testing
+
+- Go tests cover locale completeness, template parsing, media sniffing, ZIP
+  streaming, cookie/redirect safety, date formatting, retention behavior, and
+  Typst output when Typst is installed.
+- Playwright covers the full product funnel in English and German, including
+  registration, anonymous create handoff, one-QR output, the combined guest
+  page, decodable media rendering, repeat/batch uploads, ZIPs, Commercial
+  controls, legacy redirects, and ownership/security boundaries.
+- CI runs both suites before building the deployment image.

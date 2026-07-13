@@ -2,8 +2,10 @@ package app
 
 import (
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -23,6 +25,67 @@ func withRepoRoot(t *testing.T) {
 		t.Fatalf("chdir to repo root: %v", err)
 	}
 	t.Cleanup(func() { _ = os.Chdir(orig) })
+}
+
+var referencedLocaleKey = regexp.MustCompile(`"((?:auth|cookie|create|edit|error|events|footer|forgot_password|landing|legal|login|nav|overview|payment_success|poster|pricing|register|site|upload)\.[a-zA-Z0-9_.%]+)"`)
+
+// TestReferencedLocaleKeysExist closes the gap left by parity alone: two
+// locale files can be identically incomplete. Scan templates and handlers for
+// every customer-facing key and require it in every language, so a literal
+// [create.eyebrow] marker can never reach the browser again.
+func TestReferencedLocaleKeysExist(t *testing.T) {
+	withRepoRoot(t)
+
+	bundles := make(map[string]map[string]string, len(i18n.SupportedLangs))
+	for _, lang := range i18n.SupportedLangs {
+		bundles[lang] = loadLocale(t, lang)
+	}
+
+	referenced := map[string]bool{}
+	for _, root := range []string{"views", filepath.Join("internal", "app")} {
+		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if entry.IsDir() || (filepath.Ext(path) != ".html" && filepath.Ext(path) != ".go") {
+				return nil
+			}
+			raw, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			for _, match := range referencedLocaleKey.FindAllSubmatch(raw, -1) {
+				key := string(match[1])
+				if strings.HasSuffix(key, ".typ") {
+					continue
+				}
+				if strings.Contains(key, "%s") {
+					for _, tier := range []string{"free", "standard", "premium"} {
+						referenced[strings.ReplaceAll(key, "%s", tier)] = true
+					}
+					continue
+				}
+				referenced[key] = true
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("scan locale references: %v", err)
+		}
+	}
+
+	for _, lang := range i18n.SupportedLangs {
+		for key := range referenced {
+			if _, ok := bundles[lang][key]; !ok {
+				t.Errorf("locale %s is missing referenced key %q", lang, key)
+			}
+		}
+	}
+	for key := range bundles[i18n.DefaultLang] {
+		if !referenced[key] {
+			t.Errorf("locale key %q is no longer referenced; remove obsolete product copy", key)
+		}
+	}
 }
 
 // loadLocale reads data/locales/<lang>.json into a key->value map. The caller
@@ -61,9 +124,8 @@ func sortedDiff(have, want map[string]bool) []string {
 
 // TestLocaleParity asserts every language bundle carries exactly the English
 // key set — no missing keys (which would silently fall back to English and
-// ship untranslated UI to that locale) and no stray keys (typos / renames
-// that never resolve). This is what keeps the whole site genuinely translated
-// rather than half-English.
+// ship untranslated UI to that locale) and no language-specific extras. The
+// reference scan above separately rejects dead product copy.
 func TestLocaleParity(t *testing.T) {
 	withRepoRoot(t)
 

@@ -73,7 +73,7 @@ test.describe('Test 8: Login — valid credentials', () => {
     await page.fill('input[name="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForLoadState('networkidle');
-    // Logged-in users without a challenge bounce to /create; with one to /overview/{id}.
+    // Logged-in users without a gallery bounce to /create; with one to /overview/{id}.
     await expect(page).toHaveURL(/\/(overview|create)/);
     const cookies = await page.context().cookies();
     const pbAuth = cookies.find(c => c.name === 'pb_auth');

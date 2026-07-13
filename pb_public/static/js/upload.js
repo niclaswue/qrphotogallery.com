@@ -98,7 +98,20 @@
             progress.querySelector('span').style.width = pct + '%'; progress.querySelector('small').textContent = pct + '%';
         });
         xhr.addEventListener('load', function () {
-            if (xhr.status >= 200 && xhr.status < 400) { window.location.assign(xhr.responseURL || form.action); return; }
+            var responseURL = xhr.responseURL || form.action;
+            if (xhr.status >= 200 && xhr.status < 400) {
+                var uploaded = false;
+                try { uploaded = new URL(responseURL, window.location.href).searchParams.get('uploaded') === '1'; } catch (_) {}
+                if (uploaded) { window.location.assign(responseURL); return; }
+
+                // Validation responses render the form again with a specific server-side
+                // error. Replace the current document so that message is not lost inside
+                // the XMLHttpRequest response.
+                document.open();
+                document.write(xhr.responseText);
+                document.close();
+                return;
+            }
             submitBtn.disabled = false; submitBtn.textContent = originalButtonLabel; progress.hidden = true; showError(ERR_FAILED);
         });
         xhr.addEventListener('error', function () { submitBtn.disabled = false; submitBtn.textContent = originalButtonLabel; progress.hidden = true; showError(ERR_CONNECTION); });

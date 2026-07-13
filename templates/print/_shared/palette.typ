@@ -1,11 +1,11 @@
-// Convert the design colors from data.json into typst color objects.
-// `design` is a dict with hex string fields: primary, secondary, accent,
+// Convert the fixed product palette from data.json into Typst color objects.
+// `value` is a dict with hex string fields: primary, secondary, accent,
 // background, text.
 
-#let palette(design) = (
-  primary:    rgb(design.primary),
-  secondary:  rgb(design.secondary),
-  accent:     rgb(design.accent),
-  background: rgb(design.background),
-  text:       rgb(design.text),
+#let palette(value) = (
+  primary:    rgb(value.primary),
+  secondary:  rgb(value.secondary),
+  accent:     rgb(value.accent),
+  background: rgb(value.background),
+  text:       rgb(value.text),
 )

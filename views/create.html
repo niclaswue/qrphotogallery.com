@@ -2,47 +2,46 @@
 {{define "description"}}{{T "create.meta_description"}}{{end}}
 {{define "robots"}}noindex, nofollow{{end}}
 {{define "bodyclass"}}create{{end}}
-{{define "head"}}<link rel="stylesheet" href="/static/css/landing.css"><link rel="stylesheet" href="/static/css/create.css">{{end}}
+{{define "head"}}<link rel="stylesheet" href="/static/css/create.css">{{end}}
 
 {{define "content"}}
 <div class="create-page">
     {{template "site_nav" .}}
-    <main class="creator-layout">
-        <div class="creator-intro">
-            <span class="eyebrow">{{if .EditMode}}{{T "edit.title"}}{{else}}{{T "create.eyebrow"}}{{end}}</span>
-            <h1>{{if .EditMode}}{{T "edit.heading"}}{{else}}{{T "create.hero_title"}}{{end}}</h1>
-            <p>{{T "create.hero_subtitle"}}</p>
-        </div>
-        <form class="gallery-setup-card" method="post" action="{{.LangPrefix}}{{.FormAction}}">
-            <div class="setup-progress"><span class="active"></span><span></span><span></span><small>{{T "create.step_label"}}</small></div>
-            <div class="form-field">
-                <label for="eventTitle">{{T "create.event.name_label"}}</label>
-                <input type="text" id="eventTitle" name="title" required maxlength="120" placeholder="{{T "create.event.name_placeholder"}}" value="{{.EventTitle}}" autofocus>
-                <small>{{T "create.event.name_hint"}}</small>
-            </div>
-            <div class="form-field">
-                <label for="eventDate">{{T "create.event.date_label"}}</label>
-                <div class="date-input-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg><input type="date" id="eventDate" name="event_date" value="{{.EventDate}}"></div>
-                <small>{{T "create.event.date_hint"}}</small>
-            </div>
-            {{if not .EditMode}}
-            <div class="form-field">
-                <label>{{T "create.design.title"}}</label>
-                <small class="field-intro">{{T "create.design.subtitle"}}</small>
-                <div class="design-options">
-                    {{range $i, $d := .Designs}}
-                    <label class="design-option"><input type="radio" name="design_id" value="{{$d.ID}}" {{if $.CurrentDesignID}}{{if eq $d.ID $.CurrentDesignID}}checked{{end}}{{else if eq $i 0}}checked{{end}}><span><i style="--swatch-a:{{$d.Primary}};--swatch-b:{{$d.Background}}"></i><b>{{T (printf "design.%s" $d.ID)}}</b></span></label>
-                    {{end}}
+    <main class="creator-shell">
+        {{if .EditMode}}<a href="{{.LangPrefix}}/overview/{{.EventID}}" class="back-link">← {{T "edit.cancel"}}</a>{{end}}
+        <div class="creator-layout">
+            <section class="creator-copy">
+                <span class="eyebrow">{{if .EditMode}}{{T "edit.eyebrow"}}{{else}}{{T "create.eyebrow"}}{{end}}</span>
+                <h1>{{if .EditMode}}{{T "edit.heading"}}{{else}}{{T "create.hero_title"}}{{end}}</h1>
+                <p>{{if .EditMode}}{{T "edit.subtitle"}}{{else}}{{T "create.hero_subtitle"}}{{end}}</p>
+                {{if not .EditMode}}
+                <div class="creator-promise">
+                    <article><span>1</span><div><strong>{{T "create.promise.one_title"}}</strong><small>{{T "create.promise.one_text"}}</small></div></article>
+                    <article><span>2</span><div><strong>{{T "create.promise.two_title"}}</strong><small>{{T "create.promise.two_text"}}</small></div></article>
+                    <article><span>3</span><div><strong>{{T "create.promise.three_title"}}</strong><small>{{T "create.promise.three_text"}}</small></div></article>
                 </div>
-            </div>
-            <input type="hidden" name="prompts" value='{{T "create.default_bucket"}}'>
-            <input type="hidden" name="qr_mode" value="single">
-            {{end}}
-            <div class="setup-includes"><span>✓ {{T "create.includes.qr"}}</span><span>✓ {{T "create.includes.storage"}}</span><span>✓ {{T "create.includes.originals"}}</span></div>
-            <button type="submit" class="btn btn-primary btn-large btn-block">{{if .EditMode}}{{T "edit.save_btn"}}{{else}}{{T "create.actions.next"}}{{end}} <span>→</span></button>
-            {{if not .EditMode}}<p class="setup-note">{{T "create.actions.note"}}</p>{{end}}
-        </form>
+                {{end}}
+            </section>
+
+            <form class="gallery-setup-card" method="post" action="{{.LangPrefix}}{{.FormAction}}">
+                <header><span>{{if .EditMode}}{{T "edit.form_label"}}{{else}}{{T "create.step_label"}}{{end}}</span><strong>{{T "create.form_time"}}</strong></header>
+                <div class="form-field">
+                    <label for="eventTitle">{{T "create.event.name_label"}}</label>
+                    <input type="text" id="eventTitle" name="title" required maxlength="120" placeholder='{{T "create.event.name_placeholder"}}' value="{{.EventTitle}}" autofocus>
+                    <small>{{T "create.event.name_hint"}}</small>
+                </div>
+                <div class="form-field">
+                    <label for="eventDate">{{T "create.event.date_label"}}</label>
+                    <div class="date-input-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg><input type="date" id="eventDate" name="event_date" value="{{.EventDate}}"></div>
+                    <small>{{T "create.event.date_hint"}}</small>
+                </div>
+                {{if not .EditMode}}<div class="setup-includes"><span>✓ {{T "create.includes.qr"}}</span><span>✓ {{T "create.includes.storage"}}</span><span>✓ {{T "create.includes.originals"}}</span></div>{{end}}
+                <button type="submit" class="btn btn-primary btn-large btn-block">{{if .EditMode}}{{T "edit.save_btn"}}{{else}}{{T "create.actions.next"}}{{end}} <span aria-hidden="true">→</span></button>
+                {{if not .EditMode}}<p class="setup-note">{{T "create.actions.note"}}</p>{{end}}
+            </form>
+        </div>
     </main>
     {{template "site_footer" .}}
-</div><script src="/static/js/mobile-nav.js"></script>
+</div>
+<script src="/static/js/mobile-nav.js"></script>
 {{end}}

@@ -2,16 +2,18 @@ import { test, expect } from '@playwright/test';
 import { ensureAnonymous, loginFreshUser, createEventViaCookie, authedRequest } from './helpers';
 
 test.describe('Guest access and route protection', () => {
-  test('shared QR route renders the upload page without authentication', async ({ page }) => {
+  test('shared QR route renders uploader and flat gallery without authentication', async ({ page }) => {
     await loginFreshUser(page);
-    const galleryId = await createEventViaCookie(page, 'Upload Test Wedding', ['Gallery uploads'], 'classic', 'single');
-    expect(galleryId).toBeTruthy();
+    const galleryId = await createEventViaCookie(page, 'Upload Test Wedding');
     await ensureAnonymous(page);
     const response = await page.goto(`/e/${galleryId}`);
     expect(response!.status()).toBe(200);
-    await expect(page.locator('.guest-title h1')).toContainText('Upload Test Wedding');
+    await expect(page.locator('.guest-intro h1')).toContainText('Upload Test Wedding');
     await expect(page.locator('input#photo')).toBeAttached();
-    await expect(page.locator('input#photo')).toHaveAttribute('multiple', '');
+    await expect(page.locator('input#photo')).not.toHaveAttribute('multiple', '');
+    await expect(page.locator('.upload-limit')).toContainText(/free preview/i);
+    await expect(page.locator('#gallery')).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/prompt|challenge/i);
   });
 
   test('missing galleries return localized HTML 404 pages', async ({ page }) => {
@@ -23,13 +25,13 @@ test.describe('Guest access and route protection', () => {
     expect(bodyText.startsWith('{')).toBeFalsy();
   });
 
-  test('done page renders success copy and gallery link', async ({ page }) => {
+  test('old library links redirect to the canonical one-QR gallery', async ({ page }) => {
     await loginFreshUser(page);
-    const galleryId = await createEventViaCookie(page, 'Done Test', ['Gallery uploads'], 'classic', 'single');
-    expect(galleryId).toBeTruthy();
-    await page.goto(`/e/${galleryId}/done?mode=qr`);
-    await expect(page.locator('.done-card h1')).toBeVisible();
-    await expect(page.locator(`a[href="/e/${galleryId}/library"]`)).toBeVisible();
+    const galleryId = await createEventViaCookie(page, 'Legacy Link Test');
+    await ensureAnonymous(page);
+    await page.goto(`/e/${galleryId}/library`);
+    await expect(page).toHaveURL(new RegExp(`/e/${galleryId}#gallery$`));
+    await expect(page.locator('#upload-form')).toBeVisible();
   });
 
   for (const route of ['/overview/some_id', '/gallery/some_id', '/edit/some_id', '/poster/some_id', '/download/some_id']) {
@@ -43,8 +45,7 @@ test.describe('Guest access and route protection', () => {
 
   test("a second user cannot access another user's gallery", async ({ page }) => {
     await loginFreshUser(page);
-    const galleryId = await createEventViaCookie(page, 'Private Gallery', ['Gallery uploads'], 'classic', 'single');
-    expect(galleryId).toBeTruthy();
+    const galleryId = await createEventViaCookie(page, 'Private Gallery');
     await page.goto('/logout');
     await ensureAnonymous(page);
     await loginFreshUser(page);
@@ -61,20 +62,12 @@ test.describe('Guest access and route protection', () => {
       headers: { Cookie: `pb_auth=${cookie.value}` },
     })).json();
     expect(tier.tier).toBe('free');
-    expect(tier.max_prompts).toBe(1);
+    expect(tier.max_prompts).toBeUndefined();
   });
 
   test('pricing links to both hosted checkout routes', async ({ page }) => {
     await page.goto('/pricing');
     await expect(page.locator('a[href*="/payment?plan=standard"]').first()).toBeVisible();
     await expect(page.locator('a[href*="/payment?plan=premium"]').first()).toBeVisible();
-  });
-
-  test('an invalid hidden upload destination returns 404', async ({ page }) => {
-    await loginFreshUser(page);
-    const galleryId = await createEventViaCookie(page, 'Invalid Destination Test', ['Gallery uploads'], 'classic', 'single');
-    expect(galleryId).toBeTruthy();
-    const response = await page.goto(`/e/${galleryId}/not_a_real_prompt`);
-    expect(response!.status()).toBe(404);
   });
 });

@@ -1,19 +1,14 @@
 import { test, expect, Page } from '@playwright/test';
-import { ensureAnonymous, loginFreshUser, createEventViaCookie, authedPost, randomEmail } from './helpers';
+import { ensureAnonymous, loginFreshUser, createEventViaCookie, randomEmail } from './helpers';
 
 async function setPendingCookie(page: Page, value: string) {
-  await page.context().addCookies([{
-    name: 'pending_event',
-    value,
-    url: new URL(page.url()).origin,
-  }]);
+  await page.context().addCookies([{ name: 'pending_event', value, url: new URL(page.url()).origin }]);
 }
 
 test.describe('Security and edge cases', () => {
   test('gallery titles are HTML escaped', async ({ page }) => {
     await loginFreshUser(page);
-    const galleryId = await createEventViaCookie(page, '<script>alert(1)</script>', ['Gallery uploads'], 'classic', 'single');
-    expect(galleryId).toBeTruthy();
+    const galleryId = await createEventViaCookie(page, '<script>alert(1)</script>');
     await page.goto(`/overview/${galleryId}`);
     expect(await page.content()).not.toMatch(/<script>alert\(1\)<\/script>/);
     await expect(page.locator('h1')).toContainText('<script>alert(1)</script>');
@@ -27,7 +22,6 @@ test.describe('Security and edge cases', () => {
     await page.fill('input[name="password_confirm"]', 'password123');
     await page.locator('button[type="submit"]').click();
     await page.goto('/logout');
-
     await page.goto('/login?redirect=//evil.com');
     await page.fill('input[name="identity"]', email);
     await page.fill('input[name="password"]', 'password123');
@@ -44,34 +38,24 @@ test.describe('Security and edge cases', () => {
       await loginFreshUser(page);
       await setPendingCookie(page, value);
       await page.goto('/create/finish');
-      expect(page.url()).not.toMatch(/\/overview\/[a-zA-Z0-9]{10,}/);
       await expect(page).toHaveURL(/\/create/);
     });
   }
 
-  test('extra pending-cookie fields cannot choose the owner', async ({ page }) => {
+  test('extra pending-cookie fields cannot choose owner or product shape', async ({ page }) => {
     await loginFreshUser(page);
     const value = Buffer.from(JSON.stringify({
       title: 'Injection Test',
-      prompts: 'Gallery uploads',
-      design_id: 'classic',
-      qr_mode: 'single',
+      prompts: 'Injected task',
+      design_id: 'modern',
+      qr_mode: 'cards',
       owner: 'DIFFERENT_USER_ID',
     })).toString('base64');
     await setPendingCookie(page, value);
     await page.goto('/create/finish');
     await expect(page).toHaveURL(/\/overview\/[a-zA-Z0-9]+/);
     await expect(page.locator('h1')).toContainText('Injection Test');
-  });
-
-  test('invalid and empty design changes are rejected', async ({ page }) => {
-    await loginFreshUser(page);
-    const galleryId = await createEventViaCookie(page, 'Design Test', ['Gallery uploads'], 'classic', 'single');
-    expect(galleryId).toBeTruthy();
-    expect((await authedPost(page, `/design/${galleryId}`, { design_id: 'absolutely_invalid' })).status).toBe(400);
-    expect((await authedPost(page, `/design/${galleryId}`)).status).toBe(400);
-    await page.goto(`/overview/${galleryId}`);
-    await expect(page.locator('input[name="design_id"][value="classic"]')).toBeChecked();
+    await expect(page.locator('body')).not.toContainText('Injected task');
   });
 
   test('PocketBase admin UI is reachable and missing static files stay 404', async ({ page }) => {
@@ -84,7 +68,7 @@ test.describe('Security and edge cases', () => {
     await page.goto('/');
     let nav = page.locator('nav.site-nav').first();
     await expect(nav.locator('a[href="/login"]')).toBeVisible();
-    await expect(nav.locator('a.btn-nav[href="/pricing"]')).toBeVisible();
+    await expect(nav.locator('a.btn-nav[href="/create"]')).toBeVisible();
 
     await loginFreshUser(page);
     await page.goto('/');
@@ -107,25 +91,12 @@ test.describe('Security and edge cases', () => {
     await expect(page.locator('input[name="password"]')).toHaveAttribute('minlength', '8');
   });
 
-  test('the simplified create form has gallery, date, design, and one hidden upload bucket', async ({ page }) => {
+  test('create form contains only gallery name and optional date', async ({ page }) => {
     await page.goto('/create');
     await expect(page.locator('#eventTitle')).toBeVisible();
     await expect(page.locator('#eventDate')).toBeVisible();
-    await expect(page.locator('input[name="design_id"]')).toHaveCount(5);
-    await expect(page.locator('input[name="prompts"]')).toHaveValue(/Photos and videos/i);
-    await expect(page.locator('input[name="qr_mode"]')).toHaveValue('single');
-  });
-
-  test('free tier rejects more than the single hidden upload bucket', async ({ page }) => {
-    await loginFreshUser(page);
-    const galleryId = await createEventViaCookie(page, 'Limit Test', ['One', 'Two'], 'classic', 'single');
-    expect(galleryId).toBeNull();
-    await expect(page.locator('.error-card')).toContainText(/limit|plan|upgrade/i);
-  });
-
-  test('free tier accepts exactly one upload bucket', async ({ page }) => {
-    await loginFreshUser(page);
-    const galleryId = await createEventViaCookie(page, 'Max Free Test', ['Gallery uploads'], 'classic', 'single');
-    expect(galleryId).toBeTruthy();
+    await expect(page.locator('input[name="design_id"], input[name="prompts"], input[name="qr_mode"]')).toHaveCount(0);
+    expect(await page.locator('main').innerText()).not.toMatch(/prompt|theme|look|card/i);
+    expect(await page.locator('body').innerText()).not.toMatch(/\[[a-z_]+\.[^\]]+\]/i);
   });
 });

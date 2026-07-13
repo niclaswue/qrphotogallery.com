@@ -7,23 +7,11 @@ import (
 
 type TierConfig struct {
 	Name       string `json:"name"`
-	MaxPrompts int    `json:"max_prompts"`
 	Price      string `json:"price"`
 	PriceCents int    `json:"price_cents"`
 	// LemonSqueezyVariantID is the variant ID used to create a checkout.
-	// Loaded at startup from env vars (LEMON_SQUEEZY_PRODUCT_<NAME>) for
-	// the control variant, or LEMON_SQUEEZY_PRODUCT_<VARIANT>_<NAME> for
-	// non-control variants.
+	// Loaded at startup from LEMON_SQUEEZY_PRODUCT_<NAME>.
 	LemonSqueezyVariantID string `json:"lemon_squeezy_variant_id,omitempty"`
-}
-
-// PricingVariant is one alternate pricing set, switched on by a PostHog
-// feature flag (see pb_public/static/js/pricing-flags.js). With no flag on,
-// the top-level Config.Tiers (the production default) are shown. Leave
-// pricing_variants empty in config.json until you actually run a price test.
-type PricingVariant struct {
-	Name  string       `json:"name"`
-	Tiers []TierConfig `json:"tiers"`
 }
 
 type LemonSqueezyConfig struct {
@@ -65,31 +53,10 @@ type Config struct {
 	PostHog      PostHogConfig      `json:"posthog"`
 	LemonSqueezy LemonSqueezyConfig `json:"-"`
 	GoogleOAuth  GoogleOAuthConfig  `json:"-"`
-	// PricingVariants lists alternate pricing sets toggled by PostHog feature
-	// flags. Defaults are the top-level Tiers.
-	PricingVariants []PricingVariant `json:"pricing_variants,omitempty"`
 	// SupportEmail is the address surfaced as support contact on paid plans
 	// and as the contact link in the imprint. Single source of truth so the
 	// pricing CTA and the legal page can't drift.
 	SupportEmail string `json:"support_email"`
-}
-
-// DefaultVariantName is the implicit name used when no PostHog flag steers
-// the visitor onto an alternate variant. It maps to Config.Tiers.
-const DefaultVariantName = "default"
-
-// pricingTiers returns the tier set for the named variant. Unknown or
-// empty names fall back to the default (top-level) tier set.
-func (c *Config) pricingTiers(variant string) []TierConfig {
-	if variant == "" || variant == DefaultVariantName {
-		return c.Tiers
-	}
-	for _, v := range c.PricingVariants {
-		if v.Name == variant {
-			return v.Tiers
-		}
-	}
-	return c.Tiers
 }
 
 type S3Config struct {
@@ -126,9 +93,9 @@ func defaultConfig() *Config {
 		FileStorage:  "local",
 		SupportEmail: "hello@qrphotogallery.com",
 		Tiers: []TierConfig{
-			{Name: "free", MaxPrompts: 1, Price: "Free", PriceCents: 0},
-			{Name: "standard", MaxPrompts: 1, Price: "€19", PriceCents: 1900},
-			{Name: "premium", MaxPrompts: 1, Price: "€29", PriceCents: 2900},
+			{Name: "free", Price: "Free", PriceCents: 0},
+			{Name: "standard", Price: "€19", PriceCents: 1900},
+			{Name: "premium", Price: "€29", PriceCents: 2900},
 		},
 	}
 }

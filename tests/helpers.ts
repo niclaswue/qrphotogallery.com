@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 // Superuser credentials the server is booted with (see .github/workflows/build.yml
 // and the local test setup). Used by upgradeToPaid to promote a user via the
@@ -34,17 +34,6 @@ export async function upgradeToPaid(page: Page, email: string, tier: string = 'p
     data: { tier },
   });
   if (!patch.ok()) throw new Error(`tier update failed (${patch.status()}): ${await patch.text()}`);
-}
-
-// gotoCreateReady navigates to the create page and waits until create.js has
-// finished initialising. The init IIFE wires the Add/Save click handlers and
-// then, as one of its last steps, stamps the custom-prompt counter with "0/120"
-// (the server renders that element empty). Waiting for that text guarantees the
-// #addCustomBtn / form handlers are bound before a fast test interacts with
-// them — otherwise an early click lands before binding and is a silent no-op.
-export async function gotoCreateReady(page: Page, path: string = '/create') {
-  await page.goto(path);
-  await expect(page.locator('#customQuestionCount')).toHaveText('0/120');
 }
 
 export async function registerUser(page: Page, email: string, password: string) {
@@ -83,15 +72,11 @@ export async function loginFreshUser(page: Page, _label?: string): Promise<strin
 export async function createEventViaCookie(
   page: Page,
   title: string,
-  prompts: string[],
-  designId: string = 'classic',
-  qrMode: string = 'cards'
+  eventDate: string = ''
 ): Promise<string | null> {
   const pendingData = JSON.stringify({
     title: title,
-    prompts: prompts.join('\n'),
-    design_id: designId,
-    qr_mode: qrMode,
+    event_date: eventDate,
   });
   const b64 = Buffer.from(pendingData).toString('base64');
   const origin = new URL(page.url()).origin;
