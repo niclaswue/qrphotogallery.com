@@ -129,6 +129,7 @@ func renderWithBase(e *core.RequestEvent, page string, data map[string]any) stri
 
 	data["AppName"] = appConfig.AppName
 	data["BaseURL"] = baseURL
+	data["SupportEmail"] = appConfig.SupportEmail
 	data["Year"] = time.Now().Year()
 	data["Page"] = page
 	data["BuildTime"] = BuildTime

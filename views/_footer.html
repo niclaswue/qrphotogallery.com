@@ -8,18 +8,31 @@
                     <span class="logo-mark">{{T "site.name"}}</span>
                 </a>
                 <p class="footer-tagline">{{T "footer.tagline"}}</p>
+                <p class="footer-eu"><span aria-hidden="true">🇪🇺</span> {{T "footer.made_in"}}</p>
             </div>
             <div class="footer-col">
                 <h3>{{T "footer.product"}}</h3>
                 <ul>
                     <li><a href="{{.LangPrefix}}/create">{{T "footer.create_link"}}</a></li>
                     <li><a href="{{.LangPrefix}}/pricing">{{T "footer.pricing"}}</a></li>
+                    <li><a href="{{.LangPrefix}}/#how">{{T "footer.how"}}</a></li>
+                    <li><a href="{{.LangPrefix}}/#example">{{T "footer.example"}}</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>{{T "footer.uses_heading"}}</h3>
+                <ul>
+                    <li><a href="{{.LangPrefix}}/#uses">{{T "footer.use_wedding"}}</a></li>
+                    <li><a href="{{.LangPrefix}}/#uses">{{T "footer.use_birthday"}}</a></li>
+                    <li><a href="{{.LangPrefix}}/#uses">{{T "footer.use_corporate"}}</a></li>
+                    <li><a href="{{.LangPrefix}}/#uses">{{T "footer.use_family"}}</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h3>{{T "footer.company"}}</h3>
                 <ul>
                     <li><a href="{{.LangPrefix}}/legal">{{T "footer.legal"}}</a></li>
+                    <li><a href="mailto:{{.SupportEmail}}">{{T "footer.contact"}}</a></li>
                 </ul>
             </div>
         </div>

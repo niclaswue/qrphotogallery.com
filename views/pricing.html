@@ -27,11 +27,11 @@
                         <p class="plan-for">{{T "pricing.standard_for"}}</p>
                         <ul>
                             <li><strong>{{T "pricing.feature_one_qr"}}</strong></li>
-                            <li>{{T "pricing.feature_gallery"}}</li>
-                            <li>{{T "pricing.feature_storage_100"}}</li>
-                            <li>{{T "pricing.feature_file_size"}}</li>
+                            <li><strong>{{T "pricing.feature_unlimited"}}</strong></li>
                             <li>{{T "pricing.feature_media"}}</li>
                             <li>{{T "pricing.feature_best_quality"}}</li>
+                            <li>{{T "pricing.feature_file_size"}}</li>
+                            <li>{{T "pricing.feature_storage_100"}}</li>
                             <li>{{T "pricing.feature_guest_zip"}}</li>
                             <li>{{T "pricing.feature_storage_twelve"}}</li>
                             <li>{{T "pricing.feature_eu"}}</li>
@@ -58,7 +58,33 @@
                         <small class="card-note">{{T "pricing.card_note"}}</small>
                     </article>
                 </div>
+                <p class="soft-cap-note">{{T "pricing.soft_cap"}}</p>
                 <div class="pricing-reassurance"><span>🔒 {{T "pricing.reassure.payment"}}</span><span>🇪🇺 {{T "pricing.reassure.eu"}}</span><span>↩ {{T "pricing.reassure.refund"}}</span></div>
+            </div>
+        </section>
+
+        <section class="compare-section">
+            <div class="container">
+                <header class="section-heading">
+                    <span class="eyebrow">{{T "pricing.compare.eyebrow"}}</span>
+                    <h2>{{T "pricing.compare.title"}}</h2>
+                </header>
+                <div class="compare-wrap">
+                    <table class="compare-table">
+                        <thead>
+                            <tr><th></th><th class="col-us">{{T "pricing.compare.col_us"}}</th><th class="col-them">{{T "pricing.compare.col_them"}}</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><th scope="row">{{T "pricing.compare.row_storage"}}</th><td class="col-us"><span class="yes">{{T "pricing.compare.us_storage"}}</span></td><td class="col-them">{{T "pricing.compare.them_storage"}}</td></tr>
+                            <tr><th scope="row">{{T "pricing.compare.row_quality"}}</th><td class="col-us"><span class="yes">{{T "pricing.compare.us_quality"}}</span></td><td class="col-them">{{T "pricing.compare.them_quality"}}</td></tr>
+                            <tr><th scope="row">{{T "pricing.compare.row_video"}}</th><td class="col-us"><span class="yes">{{T "pricing.compare.us_video"}}</span></td><td class="col-them">{{T "pricing.compare.them_video"}}</td></tr>
+                            <tr><th scope="row">{{T "pricing.compare.row_pricing"}}</th><td class="col-us"><span class="yes">{{T "pricing.compare.us_pricing"}}</span></td><td class="col-them">{{T "pricing.compare.them_pricing"}}</td></tr>
+                            <tr><th scope="row">{{T "pricing.compare.row_app"}}</th><td class="col-us"><span class="yes">{{T "pricing.compare.us_app"}}</span></td><td class="col-them">{{T "pricing.compare.them_app"}}</td></tr>
+                            <tr><th scope="row">{{T "pricing.compare.row_access"}}</th><td class="col-us"><span class="yes">{{T "pricing.compare.us_access"}}</span></td><td class="col-them">{{T "pricing.compare.them_access"}}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="compare-note">{{T "pricing.compare.note"}}</p>
             </div>
         </section>
 

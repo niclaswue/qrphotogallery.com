@@ -3,6 +3,7 @@
 {{define "bodyclass"}}landing{{end}}
 {{define "head"}}
 <link rel="stylesheet" href="/static/css/landing.css">
+<link rel="preload" as="image" href="/static/img/qr-sample.svg">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"QR Photo Gallery","url":{{.BaseURL}},"applicationCategory":"PhotographyApplication","operatingSystem":"Web","offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":{{.StandardPriceEUR}},"highPrice":{{.PremiumPriceEUR}}}}</script>
 {{end}}
 
@@ -13,38 +14,42 @@
         <section class="hero">
             <div class="container-wide hero-grid">
                 <div class="hero-copy">
-                    <span class="eyebrow">{{T "landing.overline"}}</span>
-                    <h1>{{T "landing.hero.line1"}} <em>{{T "landing.hero.line2"}}</em></h1>
+                    <span class="eyebrow">{{T "landing.hero.eyebrow"}}</span>
+                    <h1>{{T "landing.hero.title_lead"}}<br><em>{{T "landing.hero.title_accent"}}</em></h1>
                     <p class="hero-subtitle">{{T "landing.hero.subtitle"}}</p>
                     <div class="hero-actions">
                         <a href="{{.LangPrefix}}/create" class="btn btn-primary btn-large">{{T "landing.hero.cta"}} <span aria-hidden="true">→</span></a>
                         <a href="#how" class="text-link">{{T "landing.hero.secondary"}} <span aria-hidden="true">↓</span></a>
                     </div>
-                    <p class="hero-note"><span aria-hidden="true">✓</span> {{T "landing.hero.note"}}</p>
+                    <p class="hero-trust"><span aria-hidden="true">✓</span> {{T "landing.hero.trust"}}</p>
                 </div>
                 <div class="hero-visual">
-                    <img src="/static/img/hero-gallery.webp" alt='{{T "landing.hero.image_alt"}}' width="1600" height="1067">
-                    <div class="hero-qr-card" aria-hidden="true">
-                        <span class="mini-qr"><i></i><i></i><i></i><i></i><i></i></span>
-                        <div><strong>{{T "landing.hero.qr_title"}}</strong><small>{{T "landing.hero.qr_text"}}</small></div>
+                    <div class="qr-card">
+                        <span class="qr-card-tag">{{T "landing.hero.card_tag"}}</span>
+                        <div class="qr-card-head">
+                            <strong>Emma &amp; Louis</strong>
+                            <small>14 June 2026</small>
+                        </div>
+                        <div class="qr-card-code">
+                            <img src="/static/img/qr-sample.svg" alt='{{T "landing.hero.card_alt"}}' width="220" height="220">
+                        </div>
+                        <p class="qr-card-instruction">{{T "landing.hero.card_instruction"}}</p>
+                        <div class="qr-card-foot">
+                            <span class="qr-card-domain">qrphotogallery.com</span>
+                            <small>{{T "landing.hero.card_note"}}</small>
+                        </div>
                     </div>
-                    <div class="hero-upload-chip"><span>↑</span><div><strong>{{T "landing.hero.chip_title"}}</strong><small>{{T "landing.hero.chip_text"}}</small></div><i>✓</i></div>
                 </div>
-            </div>
-        </section>
-
-        <section class="trust-strip" aria-label='{{T "landing.trust.label"}}'>
-            <div class="container-wide trust-grid">
-                <div><strong>100 GB</strong><span>{{T "landing.trust.storage"}}</span></div>
-                <div><strong>2 GB</strong><span>{{T "landing.trust.files"}}</span></div>
-                <div><strong>1 {{T "landing.trust.year_value"}}</strong><span>{{T "landing.trust.year"}}</span></div>
-                <div><strong>EU</strong><span>{{T "landing.trust.eu"}}</span></div>
             </div>
         </section>
 
         <section class="how-section" id="how">
             <div class="container-wide">
-                <header class="section-heading"><span class="eyebrow">{{T "landing.how.overline"}}</span><h2>{{T "landing.how.title"}}</h2><p>{{T "landing.how.subtitle"}}</p></header>
+                <header class="section-heading">
+                    <span class="eyebrow">{{T "landing.how.eyebrow"}}</span>
+                    <h2>{{T "landing.how.title"}}</h2>
+                    <p>{{T "landing.how.subtitle"}}</p>
+                </header>
                 <div class="steps">
                     <article><b>01</b><span class="step-icon">＋</span><h3>{{T "landing.how.step1.title"}}</h3><p>{{T "landing.how.step1.text"}}</p></article>
                     <article><b>02</b><span class="step-icon qr-step">▦</span><h3>{{T "landing.how.step2.title"}}</h3><p>{{T "landing.how.step2.text"}}</p></article>
@@ -53,53 +58,129 @@
             </div>
         </section>
 
-        <section class="product-section">
-            <div class="container-wide product-grid">
-                <div class="product-preview" aria-hidden="true">
-                    <div class="phone-shell">
-                        <span class="phone-speaker"></span>
-                        <small>{{T "landing.demo.eyebrow"}}</small>
-                        <h3>Anna &amp; Marco</h3>
-                        <div class="phone-drop"><span>↑</span><strong>{{T "landing.demo.upload"}}</strong><small>JPG · HEIC · PNG · MP4 · MOV</small></div>
-                        <button>{{T "landing.demo.button"}}</button>
-                        <div class="phone-gallery"><i></i><i></i><i></i></div>
+        <section class="uses-section" id="uses">
+            <div class="container-wide">
+                <header class="section-heading section-heading-tight">
+                    <span class="eyebrow">{{T "landing.uses.eyebrow"}}</span>
+                    <h2>{{T "landing.uses.title"}}</h2>
+                </header>
+                <ul class="uses-list">
+                    <li>{{T "landing.uses.wedding"}}</li>
+                    <li>{{T "landing.uses.birthday"}}</li>
+                    <li>{{T "landing.uses.engagement"}}</li>
+                    <li>{{T "landing.uses.corporate"}}</li>
+                    <li>{{T "landing.uses.reunion"}}</li>
+                    <li>{{T "landing.uses.baby"}}</li>
+                    <li>{{T "landing.uses.graduation"}}</li>
+                    <li>{{T "landing.uses.festival"}}</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="example-section" id="example">
+            <div class="container-wide example-grid">
+                <div class="example-copy">
+                    <span class="eyebrow">{{T "landing.example.eyebrow"}}</span>
+                    <h2>{{T "landing.example.title"}}</h2>
+                    <p class="lead">{{T "landing.example.text"}}</p>
+                    <p class="example-caption"><span aria-hidden="true">↗</span> {{T "landing.example.caption"}}</p>
+                </div>
+                <div class="example-preview" aria-hidden="true">
+                    <div class="browser">
+                        <div class="browser-bar"><i></i><i></i><i></i><span class="browser-url">qrphotogallery.com/e/emma-louis</span></div>
+                        <div class="browser-head">
+                            <div><span class="browser-badge">{{T "landing.example.badge"}}</span><strong>Emma &amp; Louis</strong><small>{{T "landing.example.count"}}</small></div>
+                            <span class="browser-download">{{T "landing.example.download"}}</span>
+                        </div>
+                        <div class="masonry">
+                            <i class="ph ph1"></i><i class="ph ph2 is-video"></i><i class="ph ph3"></i>
+                            <i class="ph ph4"></i><i class="ph ph5"></i><i class="ph ph6"></i>
+                            <i class="ph ph7 is-video"></i><i class="ph ph8"></i><i class="ph ph9"></i>
+                        </div>
                     </div>
                 </div>
-                <div class="product-copy">
-                    <span class="eyebrow">{{T "landing.features.overline"}}</span>
+            </div>
+        </section>
+
+        <section class="features-section">
+            <div class="container-wide">
+                <header class="section-heading">
+                    <span class="eyebrow">{{T "landing.features.eyebrow"}}</span>
                     <h2>{{T "landing.features.title"}}</h2>
-                    <p class="lead">{{T "landing.features.subtitle"}}</p>
-                    <div class="feature-list">
-                        <article><span>01</span><div><h3>{{T "landing.features.f1.title"}}</h3><p>{{T "landing.features.f1.text"}}</p></div></article>
-                        <article><span>02</span><div><h3>{{T "landing.features.f2.title"}}</h3><p>{{T "landing.features.f2.text"}}</p></div></article>
-                        <article><span>03</span><div><h3>{{T "landing.features.f3.title"}}</h3><p>{{T "landing.features.f3.text"}}</p></div></article>
-                        <article><span>04</span><div><h3>{{T "landing.features.f4.title"}}</h3><p>{{T "landing.features.f4.text"}}</p></div></article>
-                    </div>
+                    <p>{{T "landing.features.subtitle"}}</p>
+                </header>
+                <div class="feature-grid">
+                    <article><span class="feature-mark">∞</span><h3>{{T "landing.features.f1.title"}}</h3><p>{{T "landing.features.f1.text"}}</p></article>
+                    <article><span class="feature-mark">◎</span><h3>{{T "landing.features.f2.title"}}</h3><p>{{T "landing.features.f2.text"}}</p></article>
+                    <article><span class="feature-mark">▷</span><h3>{{T "landing.features.f3.title"}}</h3><p>{{T "landing.features.f3.text"}}</p></article>
+                    <article><span class="feature-mark">⌁</span><h3>{{T "landing.features.f4.title"}}</h3><p>{{T "landing.features.f4.text"}}</p></article>
+                    <article><span class="feature-mark">◷</span><h3>{{T "landing.features.f5.title"}}</h3><p>{{T "landing.features.f5.text"}}</p></article>
+                    <article><span class="feature-mark">⛨</span><h3>{{T "landing.features.f6.title"}}</h3><p>{{T "landing.features.f6.text"}}</p></article>
                 </div>
+                <p class="soft-note">{{T "landing.features.soft_note"}}</p>
             </div>
         </section>
 
         <section class="home-price">
             <div class="container price-banner">
-                <div><span class="eyebrow">{{T "landing.price.eyebrow"}}</span><h2>{{T "landing.price.title"}}</h2><p>{{T "landing.price.text"}}</p></div>
-                <div class="price-amount"><strong>{{.StandardPrice}}</strong><small>{{T "landing.price.once"}}</small></div>
-                <a href="{{.LangPrefix}}/pricing" class="btn btn-light btn-large">{{T "landing.price.cta"}} →</a>
+                <div class="price-banner-copy">
+                    <span class="eyebrow">{{T "landing.price.eyebrow"}}</span>
+                    <h2>{{T "landing.price.title"}}</h2>
+                    <p>{{T "landing.price.text"}}</p>
+                    <ul class="price-banner-list">
+                        <li>{{T "landing.price.b1"}}</li>
+                        <li>{{T "landing.price.b2"}}</li>
+                        <li>{{T "landing.price.b3"}}</li>
+                        <li>{{T "landing.price.b4"}}</li>
+                    </ul>
+                </div>
+                <div class="price-banner-action">
+                    <div class="price-amount"><strong>{{.StandardPrice}}</strong><small>{{T "landing.price.amount_note"}}</small></div>
+                    <a href="{{.LangPrefix}}/create" class="btn btn-light btn-large btn-block">{{T "landing.price.cta"}} →</a>
+                    <a href="{{.LangPrefix}}/pricing" class="price-compare">{{T "landing.price.compare"}} →</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="trust-section">
+            <div class="container-wide">
+                <header class="section-heading">
+                    <span class="eyebrow">{{T "landing.trust.eyebrow"}}</span>
+                    <h2>{{T "landing.trust.title"}}</h2>
+                    <p>{{T "landing.trust.subtitle"}}</p>
+                </header>
+                <div class="trust-grid">
+                    <article><span class="trust-mark" aria-hidden="true">↩</span><h3>{{T "landing.trust.t1.title"}}</h3><p>{{T "landing.trust.t1.text"}}</p></article>
+                    <article><span class="trust-mark" aria-hidden="true">◔</span><h3>{{T "landing.trust.t2.title"}}</h3><p>{{T "landing.trust.t2.text"}}</p></article>
+                    <article><span class="trust-mark" aria-hidden="true">◇</span><h3>{{T "landing.trust.t3.title"}}</h3><p>{{T "landing.trust.t3.text"}}</p></article>
+                    <article><span class="trust-mark" aria-hidden="true">🇪🇺</span><h3>{{T "landing.trust.t4.title"}}</h3><p>{{T "landing.trust.t4.text"}}</p></article>
+                </div>
             </div>
         </section>
 
         <section class="faq-section">
             <div class="container">
-                <header class="section-heading"><span class="eyebrow">{{T "landing.faq.overline"}}</span><h2>{{T "landing.faq.title"}}</h2></header>
+                <header class="section-heading"><span class="eyebrow">{{T "landing.faq.eyebrow"}}</span><h2>{{T "landing.faq.title"}}</h2></header>
                 <div class="faq-list">
                     <details><summary>{{T "landing.faq.q1"}}<i>+</i></summary><p>{{T "landing.faq.a1"}}</p></details>
                     <details><summary>{{T "landing.faq.q2"}}<i>+</i></summary><p>{{T "landing.faq.a2"}}</p></details>
                     <details><summary>{{T "landing.faq.q3"}}<i>+</i></summary><p>{{T "landing.faq.a3"}}</p></details>
                     <details><summary>{{T "landing.faq.q4"}}<i>+</i></summary><p>{{T "landing.faq.a4"}}</p></details>
+                    <details><summary>{{T "landing.faq.q5"}}<i>+</i></summary><p>{{T "landing.faq.a5"}}</p></details>
+                    <details><summary>{{T "landing.faq.q6"}}<i>+</i></summary><p>{{T "landing.faq.a6"}}</p></details>
                 </div>
             </div>
         </section>
 
-        <section class="final-cta"><div class="container"><span class="eyebrow">{{T "landing.final.eyebrow"}}</span><h2>{{T "landing.final.title"}}</h2><p>{{T "landing.final.subtitle"}}</p><a href="{{.LangPrefix}}/create" class="btn btn-primary btn-large">{{T "landing.final.cta"}} →</a><small>{{T "landing.final.note"}}</small></div></section>
+        <section class="final-cta">
+            <div class="container">
+                <span class="eyebrow">{{T "landing.final.eyebrow"}}</span>
+                <h2>{{T "landing.final.title"}}</h2>
+                <p>{{T "landing.final.subtitle"}}</p>
+                <a href="{{.LangPrefix}}/create" class="btn btn-primary btn-large">{{T "landing.final.cta"}} →</a>
+                <small>{{T "landing.final.note"}}</small>
+            </div>
+        </section>
     </main>
     {{template "site_footer" .}}
 </div>
