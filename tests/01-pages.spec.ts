@@ -14,7 +14,7 @@ test.describe('Public product pages', () => {
     await expect(page.locator('.hero-subtitle')).toContainText(/Guests/i);
     await expect(page.locator('.hero-actions a.btn-primary')).toHaveAttribute('href', '/create');
     await expect(page.locator('.how-section .steps article')).toHaveCount(3);
-    await expect(page.locator('.feature-list article')).toHaveCount(4);
+    await expect(page.locator('.feature-grid article')).toHaveCount(6);
     expect(await page.locator('body').innerText()).not.toMatch(/\[[a-z_]+\.[^\]]+\]/i);
   });
 

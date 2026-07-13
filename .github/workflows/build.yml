@@ -37,6 +37,15 @@ jobs:
       - name: Build app
         run: go build -o app ./cmd/app
 
+      # The poster endpoint shells out to `typst compile`; without typst on PATH
+      # the E2E poster test 500s. Matches the version bundled in the Dockerfile.
+      - name: Install Typst
+        run: |
+          ver=v0.14.2
+          curl -fsSL "https://github.com/typst/typst/releases/download/${ver}/typst-x86_64-unknown-linux-musl.tar.xz" | tar -xJ -C /tmp
+          sudo install -m755 /tmp/typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst
+          typst --version
+
       - name: Start server
         run: |
           ./app serve &
