@@ -137,3 +137,6 @@ TLS issues automatically once DNS resolves here and the Caddy block is live.
 3. `docker compose up -d`.
 For nightly `pb_data` backups to R2, fill `BACKUP_S3_*` and add the `backup`
 service (offen/docker-volume-backup) from `deploy/docker-compose.yml`.
+
+Pocketbase
+- Superuser: niclaswue@gmail.com / oW0mdwG92xMiiw037iOHQOzt74b6
