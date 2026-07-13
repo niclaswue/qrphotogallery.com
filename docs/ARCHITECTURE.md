@@ -183,8 +183,8 @@ identically on local disk and S3.
   round-trips, ZIP streaming through the storage abstraction (regression
   test for the S3 empty-archive bug), redirect safety, locale parity,
   lang-preference middleware, Typst renders (skipped when typst is absent).
-- **Playwright** (`tests/`, 79 tests) drives the real server through the
-  whole funnel, including tier upgrades via the superuser API
+- **Playwright** (`tests/`, 54 tests) drives the current product through the
+  whole funnel, including localized pages, photo/video uploads, tier upgrades via the superuser API
   (`upgradeToPaid` helper) and multipart upload edge cases.
 - CI (`.github/workflows/build.yml`) runs both before building/pushing the
   Docker image.

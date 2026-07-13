@@ -63,19 +63,19 @@ func handleEventUpload(e *core.RequestEvent) error {
 	promptIDFromURL := e.Request.PathValue("promptID")
 
 	if eventID == "" {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 
 	event, err := e.App.FindRecordById("events", eventID)
 	if err != nil {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 
 	lang := guestLang(e, event)
 
 	prompts, err := e.App.FindRecordsByFilter("prompts", "event = {:eid}", "sort_order", 1000, 0, dbxParams{"eid": eventID})
 	if err != nil || len(prompts) == 0 {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "No prompts found for this event.")
+		return renderHTMLErrorKeysLang(e, http.StatusNotFound, lang, "error.title.not_found", "error.message.upload_destination_not_found")
 	}
 
 	var prompt *core.Record
@@ -88,7 +88,7 @@ func handleEventUpload(e *core.RequestEvent) error {
 		}
 	}
 	if prompt == nil {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Prompt not found.")
+		return renderHTMLErrorKeysLang(e, http.StatusNotFound, lang, "error.title.not_found", "error.message.upload_destination_not_found")
 	}
 
 	// Soft lock: if the owner has enabled the paid one-upload-per-guest lock
@@ -232,15 +232,15 @@ func handleEventUpload(e *core.RequestEvent) error {
 func handleEventLibrary(e *core.RequestEvent) error {
 	eventID := e.Request.PathValue("id")
 	if eventID == "" {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 
 	event, err := e.App.FindRecordById("events", eventID)
 	if err != nil {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 	if !eventGalleryActive(event) {
-		return renderHTMLError(e, http.StatusGone, "Gallery Expired", "This gallery's one-year availability period has ended.")
+		return renderHTMLErrorKeysLang(e, http.StatusGone, guestLang(e, event), "error.title.gallery_expired", "error.message.gallery_expired")
 	}
 
 	lang := guestLang(e, event)
@@ -306,14 +306,14 @@ func handleEventLibrary(e *core.RequestEvent) error {
 func handleEventDone(e *core.RequestEvent) error {
 	eventID := e.Request.PathValue("id")
 	if eventID == "" {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 	event, err := e.App.FindRecordById("events", eventID)
 	if err != nil {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 	if !eventGalleryActive(event) {
-		return renderHTMLError(e, http.StatusGone, "Gallery Expired", "This gallery's one-year availability period has ended.")
+		return renderHTMLErrorKeysLang(e, http.StatusGone, guestLang(e, event), "error.title.gallery_expired", "error.message.gallery_expired")
 	}
 
 	lang := guestLang(e, event)
@@ -467,15 +467,15 @@ func incrementPromptShowCount(app core.App, promptID string) {
 func handleEventDispatch(e *core.RequestEvent) error {
 	eventID := e.Request.PathValue("id")
 	if eventID == "" {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 
 	event, err := e.App.FindRecordById("events", eventID)
 	if err != nil {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 	if !eventGalleryActive(event) {
-		return renderHTMLError(e, http.StatusGone, "Gallery Expired", "This gallery's one-year availability period has ended.")
+		return renderHTMLErrorKeysLang(e, http.StatusGone, guestLang(e, event), "error.title.gallery_expired", "error.message.gallery_expired")
 	}
 
 	// Single-QR is opt-in per event. If it's off — including the case where
@@ -487,7 +487,7 @@ func handleEventDispatch(e *core.RequestEvent) error {
 
 	prompts, err := e.App.FindRecordsByFilter("prompts", "event = {:eid}", "sort_order", 1000, 0, dbxParams{"eid": eventID})
 	if err != nil || len(prompts) == 0 {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "No prompts found for this event.")
+		return renderHTMLErrorKeysLang(e, http.StatusNotFound, guestLang(e, event), "error.title.not_found", "error.message.upload_destination_not_found")
 	}
 
 	// Same one-upload-per-guest lock as the per-prompt flow; owners previewing
@@ -518,7 +518,7 @@ func handleEventDispatch(e *core.RequestEvent) error {
 	if cur == "" {
 		chosen := pickPrompt(prompts, seen, eventHasUploadSet(e.App, eventID))
 		if chosen == nil {
-			return renderHTMLError(e, http.StatusNotFound, "Not Found", "No prompts found for this event.")
+			return renderHTMLErrorKeysLang(e, http.StatusNotFound, guestLang(e, event), "error.title.not_found", "error.message.upload_destination_not_found")
 		}
 		cur = chosen.Id
 		incrementPromptShowCount(e.App, chosen.Id)
@@ -533,13 +533,14 @@ func handleEventDispatch(e *core.RequestEvent) error {
 	}
 
 	return e.HTML(http.StatusOK, renderWithBase(e, "challenge", map[string]any{
-		"GuestPage":  true,
-		"Lang":       guestLang(e, event),
-		"Event":      event,
-		"Design":     design,
-		"Prompt":     prompt,
-		"PromptID":   prompt.Id,
-		"PromptText": prompt.GetString("text"),
-		"SingleQR":   true,
+		"GuestPage":   true,
+		"Lang":        guestLang(e, event),
+		"Event":       event,
+		"Design":      design,
+		"Prompt":      prompt,
+		"PromptID":    prompt.Id,
+		"PromptText":  prompt.GetString("text"),
+		"SingleQR":    true,
+		"CollectName": collectGuestNameEnabled(e.App, event),
 	}))
 }

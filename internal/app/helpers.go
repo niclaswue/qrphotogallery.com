@@ -18,6 +18,23 @@ func isValidDate(s string) bool {
 	return err == nil
 }
 
+// formatDisplayDate keeps dates readable in the two shipped locales without
+// pulling browser or server locale state into the stored ISO value.
+func formatDisplayDate(raw, lang string) string {
+	parsed, err := time.Parse("2006-01-02", raw)
+	if err != nil {
+		return raw
+	}
+	return formatDisplayTime(parsed, lang)
+}
+
+func formatDisplayTime(value time.Time, lang string) string {
+	if lang == "de" {
+		return value.Format("02.01.2006")
+	}
+	return value.Format("2 Jan 2006")
+}
+
 type Tier struct {
 	Name       string
 	MaxPrompts int

@@ -1,4 +1,4 @@
-{{define "title"}}Legal{{end}}
+{{define "title"}}{{T "legal.title"}}{{end}}
 {{define "description"}}{{T "legal.meta_description"}}{{end}}
 {{define "robots"}}noindex, follow{{end}}
 {{define "bodyclass"}}legal{{end}}
@@ -11,12 +11,12 @@
     <main class="app-main">
         <div class="app-container">
             <header class="app-header">
-                <h1>Legal</h1>
-                <p class="subtitle">Imprint, privacy policy and refund policy.</p>
+                <h1>{{T "legal.title"}}</h1>
+                <p class="subtitle">{{T "legal.subtitle"}}</p>
                 <nav class="legal-toc">
-                    <a href="#imprint">Imprint</a>
-                    <a href="#privacy">Privacy</a>
-                    <a href="#refund">Refund</a>
+                    <a href="#imprint">{{T "legal.imprint"}}</a>
+                    <a href="#privacy">{{T "legal.privacy"}}</a>
+                    <a href="#refund">{{T "legal.refund"}}</a>
                 </nav>
             </header>
 

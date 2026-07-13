@@ -30,11 +30,11 @@ func handlePayment(e *core.RequestEvent) error {
 		}
 	}
 	if tier == nil || tier.PriceCents == 0 {
-		return renderHTMLError(e, http.StatusBadRequest, "Invalid Plan", "The selected plan is not available.")
+		return renderHTMLErrorKeys(e, http.StatusBadRequest, "error.title.invalid_plan", "error.message.invalid_plan")
 	}
 
 	if tier.LemonSqueezyVariantID == "" || appConfig.LemonSqueezy.APIKey == "" {
-		return renderHTMLError(e, http.StatusServiceUnavailable, "Checkout Unavailable", "Payment processing is not configured yet. Please try again later.")
+		return renderHTMLErrorKeys(e, http.StatusServiceUnavailable, "error.title.checkout_unavailable", "error.message.checkout_unavailable")
 	}
 
 	redirectURL := strings.TrimRight(appConfig.AppURL, "/") + "/payment/success?plan=" + plan

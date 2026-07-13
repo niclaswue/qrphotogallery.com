@@ -68,10 +68,12 @@ func handlePricing(e *core.RequestEvent) error {
 }
 
 func handleLegal(e *core.RequestEvent) error {
+	lang, _ := i18n.FromPath(e.Request.URL.Path)
+	sections := legalSections[lang]
 	return e.HTML(http.StatusOK, renderWithBase(e, "legal", map[string]any{
-		"Imprint": legalSections["imprint"],
-		"Privacy": legalSections["privacy"],
-		"Refund":  legalSections["refund"],
+		"Imprint": sections["imprint"],
+		"Privacy": sections["privacy"],
+		"Refund":  sections["refund"],
 	}))
 }
 

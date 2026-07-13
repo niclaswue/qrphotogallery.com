@@ -31,11 +31,11 @@
                 <small class="field-intro">{{T "create.design.subtitle"}}</small>
                 <div class="design-options">
                     {{range $i, $d := .Designs}}
-                    <label class="design-option"><input type="radio" name="design_id" value="{{$d.ID}}" {{if $.CurrentDesignID}}{{if eq $d.ID $.CurrentDesignID}}checked{{end}}{{else if eq $i 0}}checked{{end}}><span><i style="--swatch-a:{{$d.Primary}};--swatch-b:{{$d.Background}}"></i><b>{{$d.Name}}</b></span></label>
+                    <label class="design-option"><input type="radio" name="design_id" value="{{$d.ID}}" {{if $.CurrentDesignID}}{{if eq $d.ID $.CurrentDesignID}}checked{{end}}{{else if eq $i 0}}checked{{end}}><span><i style="--swatch-a:{{$d.Primary}};--swatch-b:{{$d.Background}}"></i><b>{{T (printf "design.%s" $d.ID)}}</b></span></label>
                     {{end}}
                 </div>
             </div>
-            <input type="hidden" name="prompts" value="Photos and videos from our event">
+            <input type="hidden" name="prompts" value='{{T "create.default_bucket"}}'>
             <input type="hidden" name="qr_mode" value="single">
             {{end}}
             <div class="setup-includes"><span>✓ {{T "create.includes.qr"}}</span><span>✓ {{T "create.includes.storage"}}</span><span>✓ {{T "create.includes.originals"}}</span></div>

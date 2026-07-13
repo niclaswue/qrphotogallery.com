@@ -19,6 +19,13 @@
     var ERR_BIG = form.dataset.errTooLarge || 'One of these files is too large.';
     var ERR_NONE = form.dataset.errNoFile || 'Choose at least one file.';
     var ERR_NAME = form.dataset.errName || 'Please enter your name.';
+    var ERR_TOO_MANY = form.dataset.errTooMany || 'Please select no more than 100 files at once.';
+    var ERR_BATCH_BIG = form.dataset.errBatchTooLarge || 'This selection is larger than 4 GB. Upload it in two batches.';
+    var ERR_FAILED = form.dataset.errFailed || 'The upload could not be completed. Please try again.';
+    var ERR_CONNECTION = form.dataset.errConnection || 'Your connection was interrupted. Please try again.';
+    var UPLOADING = form.dataset.uploading || 'Uploading…';
+    var SELECTED_ONE = form.dataset.selectedOne || '1 file selected';
+    var SELECTED_MANY = form.dataset.selectedMany || '%d files selected';
     var originalButtonLabel = submitBtn.textContent;
     submitBtn.disabled = true;
 
@@ -31,14 +38,14 @@
     function clearError() { clientError.textContent = ''; clientError.hidden = true; }
     function valid(files) {
         if (!files.length) { showError(ERR_NONE); return false; }
-        if (files.length > 100) { showError('Please select no more than 100 files at once.'); return false; }
+        if (files.length > 100) { showError(ERR_TOO_MANY); return false; }
         var total = 0;
         for (var i = 0; i < files.length; i++) {
             if (files[i].size > MAX_BYTES) { showError(ERR_BIG); return false; }
             if (!((files[i].type || '').match(/^(image|video)\//) || EXT_OK.test(files[i].name))) { showError(ERR_BAD); return false; }
             total += files[i].size;
         }
-        if (total > MAX_BATCH_BYTES) { showError('This selection is larger than 4 GB. Upload it in two batches.'); return false; }
+        if (total > MAX_BATCH_BYTES) { showError(ERR_BATCH_BIG); return false; }
         return true;
     }
     function renderFiles() {
@@ -58,7 +65,7 @@
             var small = document.createElement('small'); small.textContent = humanSize(file.size);
             label.appendChild(strong); label.appendChild(small); row.appendChild(icon); row.appendChild(label); fileList.appendChild(row);
         });
-        summary.textContent = files.length === 1 ? '1 file selected · ' + humanSize(total) : files.length + ' files selected · ' + humanSize(total);
+        summary.textContent = (files.length === 1 ? SELECTED_ONE : SELECTED_MANY.replace('%d', files.length)) + ' · ' + humanSize(total);
         picker.hidden = true; selected.hidden = false; submitBtn.disabled = false;
     }
     function reset() { input.value = ''; fileList.textContent = ''; selected.hidden = true; picker.hidden = false; submitBtn.disabled = true; clearError(); }
@@ -84,7 +91,7 @@
         if (nameInput && !nameInput.value.trim()) { showError(ERR_NAME); nameInput.focus(); return; }
         var xhr = new XMLHttpRequest();
         xhr.open('POST', form.action);
-        progress.hidden = false; submitBtn.disabled = true; submitBtn.textContent = 'Uploading…';
+        progress.hidden = false; submitBtn.disabled = true; submitBtn.textContent = UPLOADING;
         xhr.upload.addEventListener('progress', function (e) {
             if (!e.lengthComputable) return;
             var pct = Math.round((e.loaded / e.total) * 100);
@@ -92,9 +99,9 @@
         });
         xhr.addEventListener('load', function () {
             if (xhr.status >= 200 && xhr.status < 400) { window.location.assign(xhr.responseURL || form.action); return; }
-            submitBtn.disabled = false; submitBtn.textContent = originalButtonLabel; progress.hidden = true; showError('The upload could not be completed. Please try again.');
+            submitBtn.disabled = false; submitBtn.textContent = originalButtonLabel; progress.hidden = true; showError(ERR_FAILED);
         });
-        xhr.addEventListener('error', function () { submitBtn.disabled = false; submitBtn.textContent = originalButtonLabel; progress.hidden = true; showError('Your connection was interrupted. Please try again.'); });
+        xhr.addEventListener('error', function () { submitBtn.disabled = false; submitBtn.textContent = originalButtonLabel; progress.hidden = true; showError(ERR_CONNECTION); });
         xhr.send(new FormData(form));
     });
 })();

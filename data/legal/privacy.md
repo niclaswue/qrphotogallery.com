@@ -39,5 +39,6 @@ agreements.
 
 Contact us at hello@qrphotogallery.com to request access, correction,
 restriction, portability or deletion of your data, or to object to processing.
-You may also complain to your competent data-protection authority. Deleting
-your account removes your galleries and all uploaded photos and videos.
+You may also complain to your competent data-protection authority. You can
+delete individual galleries and their uploaded files from your dashboard;
+contact us if you want your account deleted as well.

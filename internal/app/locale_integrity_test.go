@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/niclaswue/template-qr-photo/internal/i18n"
@@ -117,6 +118,31 @@ func TestLangMetadataComplete(t *testing.T) {
 		}
 		if i18n.LangLocales[lang] == "" {
 			t.Errorf("i18n.LangLocales missing an entry for %q", lang)
+		}
+	}
+}
+
+// TestLocalizedLegalFilesExist prevents a translated page shell from silently
+// wrapping default-language legal content.
+func TestLocalizedLegalFilesExist(t *testing.T) {
+	withRepoRoot(t)
+
+	for _, lang := range i18n.SupportedLangs {
+		for _, entry := range legalFiles {
+			filename := entry.File
+			if lang != i18n.DefaultLang {
+				ext := filepath.Ext(entry.File)
+				filename = strings.TrimSuffix(entry.File, ext) + "." + lang + ext
+			}
+			path := filepath.Join("data", "legal", filename)
+			info, err := os.Stat(path)
+			if err != nil {
+				t.Errorf("missing %s legal file for %q: %v", entry.Key, lang, err)
+				continue
+			}
+			if info.Size() == 0 {
+				t.Errorf("legal file for %q is empty: %s", lang, path)
+			}
 		}
 	}
 }

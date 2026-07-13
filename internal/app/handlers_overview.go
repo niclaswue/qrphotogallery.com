@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/pocketbase/pocketbase/core"
+
+	"github.com/niclaswue/template-qr-photo/internal/i18n"
 )
 
 // handleOverviewList renders the signed-in user's events, newest first, with
@@ -86,6 +88,7 @@ func handleOverview(e *core.RequestEvent) error {
 	uploads, _ := e.App.FindRecordsByFilter("uploads", "event = {:eid}", "", 0, 0, dbxParams{"eid": event.Id})
 	usedGB := float64(galleryUsageBytes(e.App, event.Id)) / float64(1024*1024*1024)
 	expires := event.GetDateTime("created").Time().AddDate(1, 0, 0)
+	lang, _ := i18n.FromPath(e.Request.URL.Path)
 
 	return e.HTML(http.StatusOK, renderWithBase(e, "overview", map[string]any{
 		"Event":                event,
@@ -100,7 +103,8 @@ func handleOverview(e *core.RequestEvent) error {
 		"SupportEmail":         appConfig.SupportEmail,
 		"UploadCount":          len(uploads),
 		"StorageUsedGB":        fmt.Sprintf("%.2f", usedGB),
-		"ExpiresOn":            expires.Format("02 Jan 2006"),
+		"DisplayEventDate":     formatDisplayDate(event.GetString("event_date"), lang),
+		"ExpiresOn":            formatDisplayTime(expires, lang),
 	}))
 }
 
@@ -171,16 +175,16 @@ func handleDeleteUpload(e *core.RequestEvent) error {
 	id := e.Request.PathValue("id")
 	upload, err := e.App.FindRecordById("uploads", id)
 	if err != nil {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Upload not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.upload_not_found")
 	}
 
 	eventID := upload.GetString("event")
 	event, err := e.App.FindRecordById("events", eventID)
 	if err != nil {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 	if e.Auth.Id != event.GetString("owner") {
-		return renderHTMLError(e, http.StatusForbidden, "Not Authorized", "You do not have access to this upload.")
+		return renderHTMLErrorKeys(e, http.StatusForbidden, "error.title.not_authorized", "error.message.upload_access")
 	}
 
 	if err := e.App.Delete(upload); err != nil {

@@ -57,23 +57,23 @@ func handleCreateSubmit(e *core.RequestEvent) error {
 		DesignID  string `json:"design_id" form:"design_id"`
 	}{}
 	if err := e.BindBody(&data); err != nil {
-		return renderHTMLError(e, http.StatusBadRequest, "Invalid Form", "We couldn't read the form. Please try again.")
+		return renderHTMLErrorKeys(e, http.StatusBadRequest, "error.title.invalid_form", "error.message.invalid_form")
 	}
 
 	title := strings.TrimSpace(data.Title)
 	if title == "" {
-		return renderHTMLError(e, http.StatusBadRequest, "Missing Event Name", "Please go back and enter a name for your event.")
+		return renderHTMLErrorKeys(e, http.StatusBadRequest, "error.title.invalid_form", "error.message.missing_gallery_name")
 	}
 	if len(title) > 120 {
-		return renderHTMLError(e, http.StatusBadRequest, "Event Name Too Long", "Event names can be at most 120 characters.")
+		return renderHTMLErrorKeys(e, http.StatusBadRequest, "error.title.invalid_form", "error.message.gallery_name_too_long")
 	}
 	eventDate := strings.TrimSpace(data.EventDate)
 	if eventDate != "" && !isValidDate(eventDate) {
-		return renderHTMLError(e, http.StatusBadRequest, "Invalid Date", "That date does not look right. Use the date picker or leave it empty.")
+		return renderHTMLErrorKeys(e, http.StatusBadRequest, "error.title.invalid_form", "error.message.invalid_date")
 	}
 	prompts := parsePrompts(data.Prompts)
 	if len(prompts) == 0 {
-		return renderHTMLError(e, http.StatusBadRequest, "No Prompts", "Please add at least one prompt before continuing.")
+		return renderHTMLErrorKeys(e, http.StatusBadRequest, "error.title.invalid_form", "error.message.upload_destination_not_found")
 	}
 	designID := data.DesignID
 	if GetDesignByID(designID) == nil {
@@ -94,7 +94,7 @@ func handleCreateSubmit(e *core.RequestEvent) error {
 
 	event, err := createEvent(e, title, eventDate, prompts, designID, normalizeQRMode(data.QRMode) == "single")
 	if err != nil {
-		return renderHTMLError(e, http.StatusInternalServerError, "Could Not Save Event", "Something went wrong creating your event. Please try again — if the problem persists, contact us.")
+		return renderHTMLErrorKeys(e, http.StatusInternalServerError, "error.title.could_not_save", "error.message.could_not_save")
 	}
 	clearPendingCreate(e)
 	return redirectLocalised(e, http.StatusSeeOther, "/overview/"+event.Id)
@@ -119,7 +119,7 @@ func handleCreateFinish(e *core.RequestEvent) error {
 
 	event, err := createEvent(e, title, eventDate, prompts, designID, qrMode == "single")
 	if err != nil {
-		return renderHTMLError(e, http.StatusInternalServerError, "Could Not Save Event", "Something went wrong creating your event. Please try again — if the problem persists, contact us.")
+		return renderHTMLErrorKeys(e, http.StatusInternalServerError, "error.title.could_not_save", "error.message.could_not_save")
 	}
 	clearPendingCreate(e)
 	return redirectLocalised(e, http.StatusSeeOther, "/overview/"+event.Id)

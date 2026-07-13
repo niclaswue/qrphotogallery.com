@@ -48,6 +48,17 @@
         };
     </script>
     {{end}}
+    <script>
+        window.__cookieConsent = {
+            label: {{T "cookie.label"}},
+            title: {{T "cookie.title"}},
+            body: {{T "cookie.body"}},
+            privacy: {{T "cookie.privacy"}},
+            privacyURL: {{.LangPrefix}} + "/legal#privacy",
+            decline: {{T "cookie.decline"}},
+            accept: {{T "cookie.accept"}}
+        };
+    </script>
     <script defer src="/static/js/cookie-consent.js"></script>
     <script defer src="/static/js/htmx.min.js"></script>
     <script defer src="/static/js/lang-switcher.js"></script>

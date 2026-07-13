@@ -94,8 +94,9 @@ export async function createEventViaCookie(
     qr_mode: qrMode,
   });
   const b64 = Buffer.from(pendingData).toString('base64');
+  const origin = new URL(page.url()).origin;
   await page.context().addCookies([
-    { name: 'pending_event', value: b64, domain: 'localhost', path: '/' },
+    { name: 'pending_event', value: b64, url: origin },
   ]);
   await page.goto('/create/finish');
   await page.waitForLoadState('networkidle');

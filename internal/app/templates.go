@@ -234,6 +234,28 @@ func renderHTMLError(e *core.RequestEvent, status int, title, message string) er
 	return e.HTML(status, renderWithBase(e, "error", data))
 }
 
+// renderHTMLErrorKeys resolves a customer-facing error in the request
+// language. A ?lang= pin is honored for printed guest URLs before an event
+// record is available; callers with a known event language can use the Lang
+// variant below.
+func renderHTMLErrorKeys(e *core.RequestEvent, status int, titleKey, messageKey string) error {
+	lang, _ := i18n.FromPath(e.Request.URL.Path)
+	if pinned := e.Request.URL.Query().Get("lang"); i18n.IsSupported(pinned) {
+		lang = pinned
+	}
+	return renderHTMLErrorKeysLang(e, status, lang, titleKey, messageKey)
+}
+
+func renderHTMLErrorKeysLang(e *core.RequestEvent, status int, lang, titleKey, messageKey string) error {
+	data := map[string]any{
+		"Lang":         lang,
+		"ErrorTitle":   i18n.T(lang, titleKey),
+		"ErrorMessage": template.HTML(i18n.T(lang, messageKey)),
+		"ShowLogin":    e.Auth == nil,
+	}
+	return e.HTML(status, renderWithBase(e, "error", data))
+}
+
 // renderQRDownloadLockedError shows an error page when a free-tier owner hits
 // the paid-only bare QR downloads (PNG / ZIP), pushing them toward /pricing.
 // The overview UI hides the download links for free owners, so this is the

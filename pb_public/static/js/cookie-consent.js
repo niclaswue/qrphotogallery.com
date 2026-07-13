@@ -60,18 +60,27 @@
     }
 
     function build() {
+        var copy = window.__cookieConsent || {
+            label: "Cookie consent",
+            title: "Analytics cookies",
+            body: "We count visits anonymously by default. Accept to also enable session replay and remember your visit across pages, which helps us improve the product.",
+            privacy: "Privacy policy",
+            privacyURL: "/legal#privacy",
+            decline: "Decline",
+            accept: "Accept"
+        };
         var wrap = document.createElement("aside");
         wrap.className = "cookie-consent";
         wrap.setAttribute("role", "dialog");
         wrap.setAttribute("aria-live", "polite");
-        wrap.setAttribute("aria-label", "Cookie consent");
+        wrap.setAttribute("aria-label", copy.label);
         wrap.innerHTML =
-            '<h2>Analytics cookies</h2>' +
-            '<p>We count visits anonymously by default. Accept to also enable session replay and remember your visit across pages, which helps us improve the product. ' +
-            '<a href="/legal#privacy">Privacy policy</a>.</p>' +
+            '<h2>' + copy.title + '</h2>' +
+            '<p>' + copy.body + ' ' +
+            '<a href="' + copy.privacyURL + '">' + copy.privacy + '</a>.</p>' +
             '<div class="cookie-consent-actions">' +
-                '<button type="button" class="btn btn-secondary" data-consent="declined">Decline</button>' +
-                '<button type="button" class="btn btn-primary" data-consent="accepted">Accept</button>' +
+                '<button type="button" class="btn btn-secondary" data-consent="declined">' + copy.decline + '</button>' +
+                '<button type="button" class="btn btn-primary" data-consent="accepted">' + copy.accept + '</button>' +
             '</div>';
         wrap.addEventListener("click", function (ev) {
             var btn = ev.target.closest("[data-consent]");

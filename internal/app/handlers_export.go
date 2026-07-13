@@ -67,10 +67,10 @@ func findOwnedEvent(e *core.RequestEvent) (*core.Record, error) {
 	id := e.Request.PathValue("id")
 	event, err := e.App.FindRecordById("events", id)
 	if err != nil {
-		return nil, renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return nil, renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 	if e.Auth.Id != event.GetString("owner") {
-		return nil, renderHTMLError(e, http.StatusForbidden, "Not Authorized", "You do not have access to this event.")
+		return nil, renderHTMLErrorKeys(e, http.StatusForbidden, "error.title.not_authorized", "error.message.event_access")
 	}
 	return event, nil
 }
@@ -185,18 +185,18 @@ func handleGuestDownloadGallery(e *core.RequestEvent) error {
 	id := e.Request.PathValue("id")
 	event, err := e.App.FindRecordById("events", id)
 	if err != nil {
-		return renderHTMLError(e, http.StatusNotFound, "Not Found", "Event not found.")
+		return renderHTMLErrorKeys(e, http.StatusNotFound, "error.title.not_found", "error.message.gallery_not_found")
 	}
 	if !eventGalleryActive(event) {
-		return renderHTMLError(e, http.StatusGone, "Gallery Expired", "This gallery's one-year availability period has ended.")
+		return renderHTMLErrorKeysLang(e, http.StatusGone, guestLang(e, event), "error.title.gallery_expired", "error.message.gallery_expired")
 	}
 	// Guest downloads are a paid feature; the owner-only /download/{id} route
 	// stays open so hosts can always retrieve their own photos.
 	if !eventOwnerPaid(e.App, event) {
-		return renderHTMLError(e, http.StatusForbidden, "Not Available", "Guest gallery downloads are available on the host's paid plan only.")
+		return renderHTMLErrorKeysLang(e, http.StatusForbidden, guestLang(e, event), "error.title.not_available", "error.message.guest_download_paid")
 	}
 	if disableGuestDownloadEnabled(e.App, event) {
-		return renderHTMLError(e, http.StatusForbidden, "Not Available", "The host has disabled guest downloads for this gallery.")
+		return renderHTMLErrorKeysLang(e, http.StatusForbidden, guestLang(e, event), "error.title.not_available", "error.message.guest_download_disabled")
 	}
 
 	uploads, err := e.App.FindRecordsByFilter("uploads", "event = {:eid}", "-created", 1, 0, dbxParams{"eid": event.Id})
@@ -204,7 +204,7 @@ func handleGuestDownloadGallery(e *core.RequestEvent) error {
 		return e.InternalServerError("Failed to load uploads", err)
 	}
 	if len(uploads) == 0 {
-		return renderHTMLError(e, http.StatusBadRequest, "No Uploads", "No photos uploaded yet.")
+		return renderHTMLErrorKeysLang(e, http.StatusBadRequest, guestLang(e, event), "error.title.no_uploads", "error.message.no_uploads_guest")
 	}
 
 	return downloadGalleryZip(e, event)
@@ -228,7 +228,7 @@ func handleDownloadGallery(e *core.RequestEvent) error {
 		return e.InternalServerError("Failed to load uploads", err)
 	}
 	if len(uploads) == 0 {
-		return renderHTMLError(e, http.StatusBadRequest, "No Uploads", "No uploads yet. Share your event link with guests first.")
+		return renderHTMLErrorKeys(e, http.StatusBadRequest, "error.title.no_uploads", "error.message.no_uploads_owner")
 	}
 
 	return downloadGalleryZip(e, event)

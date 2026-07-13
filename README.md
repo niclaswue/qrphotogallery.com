@@ -30,7 +30,7 @@ working generic product ("QR Photo App") to reshape into your next idea.
 Products this template is designed to become (see [docs/ADAPTING.md](docs/ADAPTING.md)
 for concrete per-idea guides):
 
-- QR photo challenge for parties / weddings / any celebration *(≈ what it is out of the box)*
+- QR photo challenge for parties / weddings / any celebration *(template heritage; this product uses the simple-gallery shape)*
 - Simple QR photo gallery ("drop your photos here")
 - QR photo bingo with teams
 - QR audio guestbook
@@ -147,7 +147,7 @@ data/locales/             en.json / de.json translation bundles (parity-tested)
 data/legal/               imprint / privacy / refund markdown (TODO placeholders)
 data/fonts/               fonts bundled into the Typst PDFs
 pb_public/static/         css/js/img/fonts served at /static; pb_data/ is gitignored
-tests/                    Playwright browser suite (79 tests, full funnel)
+tests/                    Playwright browser suite (54 tests, current MVP funnel)
 deploy/, Dockerfile       VPS deploy: compose + Caddy + Watchtower + S3 backup
 docs/                     ARCHITECTURE, ADAPTING, DEPLOY, DESIGN
 ```
@@ -167,4 +167,4 @@ docs/                     ARCHITECTURE, ADAPTING, DEPLOY, DESIGN
   render that comes out of the printer.
 - **Locale parity is a test**: a missing translation key fails `go test`.
 - **The whole funnel is a browser test**: register → create → print →
-  guest upload → gallery → ZIP → tier gating, in 79 Playwright tests.
+  guest photo/video upload → gallery → ZIP → tier gating, in 54 Playwright tests.

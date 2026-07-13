@@ -10,7 +10,9 @@
         <section class="guest-title"><span>{{T "upload.eyebrow"}}</span><h1>{{.Event.GetString "title"}}</h1><p>{{T "upload.intro"}}</p></section>
         {{if .ErrorKey}}<div class="upload-error" role="alert">{{T .ErrorKey}}</div>{{end}}
         <form action="{{.LangPrefix}}/e/{{.Event.Id}}/{{.PromptID}}" method="POST" enctype="multipart/form-data" id="upload-form" class="upload-drop-card"
-              data-err-bad-format="{{T "upload.error.bad_format"}}" data-err-too-large="{{T "upload.error.too_large"}}" data-err-no-file="{{T "upload.error.no_file"}}" data-err-name="{{T "upload.error.name_required"}}">
+              data-err-bad-format="{{T "upload.error.bad_format"}}" data-err-too-large="{{T "upload.error.too_large"}}" data-err-no-file="{{T "upload.error.no_file"}}" data-err-name="{{T "upload.error.name_required"}}"
+              data-err-too-many="{{T "upload.error.too_many"}}" data-err-batch-too-large="{{T "upload.error.batch_too_large"}}" data-err-failed="{{T "upload.error.failed"}}" data-err-connection="{{T "upload.error.connection"}}"
+              data-uploading="{{T "upload.uploading"}}" data-selected-one="{{T "upload.selected.one"}}" data-selected-many="{{T "upload.selected.many"}}">
             <input type="hidden" name="mode" value="qr">
             <input type="file" id="photo" name="image" accept="image/*,video/*,.heic,.heif,.m4v,.mov,.mp4,.webm,.avi,.3gp" multiple hidden>
             <label for="photo" class="drop-zone" id="picker"><span class="drop-icon">↑</span><strong>{{T "upload.drop_title"}}</strong><span>{{T "upload.drop_subtitle"}}</span><small>JPG · PNG · HEIC · TIFF · MP4 · MOV · WEBM +</small></label>

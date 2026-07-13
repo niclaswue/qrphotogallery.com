@@ -74,15 +74,15 @@ func handleEditPromptsSubmit(e *core.RequestEvent) error {
 
 	title := strings.TrimSpace(data.Title)
 	if title == "" {
-		return renderHTMLError(e, http.StatusBadRequest, "Missing Event Name", "Please enter a name for your event.")
+		return renderHTMLErrorKeys(e, http.StatusBadRequest, "error.title.invalid_form", "error.message.missing_gallery_name")
 	}
 	if len(title) > 120 {
-		return renderHTMLError(e, http.StatusBadRequest, "Event Name Too Long", "Event names can be at most 120 characters.")
+		return renderHTMLErrorKeys(e, http.StatusBadRequest, "error.title.invalid_form", "error.message.gallery_name_too_long")
 	}
 
 	eventDate := strings.TrimSpace(data.EventDate)
 	if eventDate != "" && !isValidDate(eventDate) {
-		return renderHTMLError(e, http.StatusBadRequest, "Invalid Date", "That date does not look right. Use the date picker or leave it empty.")
+		return renderHTMLErrorKeys(e, http.StatusBadRequest, "error.title.invalid_form", "error.message.invalid_date")
 	}
 
 	// The edit form posts prompts as JSON carrying each prompt's ID, so edits
@@ -133,7 +133,7 @@ func handleEventSettingsSubmit(e *core.RequestEvent) error {
 		return err
 	}
 	if !isPremiumTier(getUserTier(e.Auth).Name) {
-		return renderHTMLError(e, http.StatusForbidden, "Commercial Feature", "Advanced guest controls are included in the Commercial plan.")
+		return renderHTMLErrorKeys(e, http.StatusForbidden, "error.title.commercial_feature", "error.message.commercial_feature")
 	}
 
 	data := struct {

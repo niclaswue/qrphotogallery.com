@@ -1,141 +1,68 @@
 import { test, expect } from '@playwright/test';
 import { ensureAnonymous } from './helpers';
 
-test.describe('Test 1: Home page — anonymous visitor', () => {
+test.describe('Public product pages', () => {
   test.beforeEach(async ({ page }) => {
     await ensureAnonymous(page);
   });
 
-  test('page loads with HTTP 200', async ({ page }) => {
+  test('home page presents the one-QR gallery MVP', async ({ page }) => {
     const response = await page.goto('/');
     expect(response!.status()).toBe(200);
+    await expect(page).toHaveTitle(/QR Photo Gallery/i);
+    await expect(page.locator('h1')).toContainText(/One QR code/i);
+    await expect(page.locator('.hero-subtitle')).toContainText(/Guests/i);
+    await expect(page.locator('.hero-actions a.btn-primary')).toHaveAttribute('href', '/payment?plan=standard');
+    await expect(page.locator('.how-section .step')).toHaveCount(3);
+    await expect(page.locator('.feature-list article')).toHaveCount(4);
   });
 
-  test('title contains the brand suffix', async ({ page }) => {
-    await page.goto('/');
-    await expect(page).toHaveTitle(/photo/i);
-  });
-
-  test('hero h1 mentions guests', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('h1').first()).toContainText(/guest|photographer/i);
-  });
-
-  test('hero subtitle mentions guests', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('.hero-subtitle')).toContainText(/guests/i);
-  });
-
-  test('primary hero CTA links to /create', async ({ page }) => {
-    await page.goto('/');
-    const cta = page.locator('.hero-actions a.btn-primary[href="/create"]');
-    await expect(cta).toBeVisible();
-  });
-
-  test('how-it-works has three steps', async ({ page }) => {
-    await page.goto('/');
-    const steps = page.locator('.how-it-works .step');
-    await expect(steps).toHaveCount(3);
-  });
-
-  test('feature grid shows the four benefits', async ({ page }) => {
-    await page.goto('/');
-    const features = page.locator('.feature-grid .feature');
-    await expect(features).toHaveCount(4);
-  });
-
-  test('nav shows Login, Register, Pricing for anonymous', async ({ page }) => {
+  test('anonymous navigation exposes pricing, login, and create CTA', async ({ page }) => {
     await page.goto('/');
     const nav = page.locator('nav.site-nav').first();
     await expect(nav.locator('a[href="/login"]')).toBeVisible();
-    await expect(nav.locator('a[href="/register"]')).toBeVisible();
-    await expect(nav.locator('a[href="/pricing"]')).toBeVisible();
-  });
-
-  test('footer has Legal & Privacy link', async ({ page }) => {
-    await page.goto('/');
+    await expect(nav.locator('a[href="/pricing"]')).toHaveCount(2);
+    await expect(nav.locator('a.btn-nav[href="/pricing"]')).toContainText(/Create/i);
     await expect(page.locator('footer a[href="/legal"]')).toBeVisible();
   });
-});
 
-test.describe('Test 2: Pricing page — anonymous visitor', () => {
-  test.beforeEach(async ({ page }) => {
-    await ensureAnonymous(page);
+  test('pricing shows the configured personal and commercial offers', async ({ page }) => {
     await page.goto('/pricing');
-  });
-
-  test('three pricing cards visible', async ({ page }) => {
     const cards = page.locator('.price-card');
-    await expect(cards).toHaveCount(3);
+    await expect(cards).toHaveCount(2);
+    await expect(cards.nth(0)).toContainText('€19');
+    await expect(cards.nth(0)).toContainText(/100 GB/i);
+    await expect(cards.nth(0).locator('a[href*="/payment?plan=standard"]')).toBeVisible();
+    await expect(cards.nth(0)).toHaveClass(/price-card-featured/);
+    await expect(cards.nth(1)).toContainText('€29');
+    await expect(cards.nth(1).locator('a[href*="/payment?plan=premium"]')).toBeVisible();
   });
 
-  test('Free tier shows €0 price and the 5-prompt limit', async ({ page }) => {
-    const freeCard = page.locator('.price-card').nth(0);
-    await expect(freeCard.locator('.price')).toContainText('€0');
-    await expect(freeCard).toContainText('5');
-  });
-
-  test('Free tier CTA links to /create', async ({ page }) => {
-    const freeCard = page.locator('.price-card').nth(0);
-    await expect(freeCard.locator('a[href="/create"]')).toBeVisible();
-  });
-
-  test('Standard tier shows €29 and a 100-prompt limit', async ({ page }) => {
-    const standardCard = page.locator('.price-card').nth(1);
-    await expect(standardCard.locator('.price')).toContainText('€29');
-    await expect(standardCard).toContainText('100');
-  });
-
-  test('Standard tier CTA links to /payment?plan=standard', async ({ page }) => {
-    const standardCard = page.locator('.price-card').nth(1);
-    await expect(standardCard.locator('a[href*="/payment?plan=standard"]')).toBeVisible();
-  });
-
-  test('Premium tier shows €39 and the 500-prompt limit', async ({ page }) => {
-    const premiumCard = page.locator('.price-card').nth(2);
-    await expect(premiumCard.locator('.price')).toContainText('€39');
-    await expect(premiumCard).toContainText('500');
-  });
-
-  test('Premium tier CTA links to /payment?plan=premium', async ({ page }) => {
-    const premiumCard = page.locator('.price-card').nth(2);
-    await expect(premiumCard.locator('a[href*="/payment?plan=premium"]')).toBeVisible();
-  });
-
-  test('Standard card has the popular styling', async ({ page }) => {
-    const standardCard = page.locator('.price-card').nth(1);
-    await expect(standardCard).toHaveClass(/price-card-featured/);
-  });
-});
-
-test.describe('Test 3: Legal page', () => {
-  test.beforeEach(async ({ page }) => {
+  test('English legal page renders all policy sections', async ({ page }) => {
     await page.goto('/legal');
-  });
-
-  test('three legal sections exist', async ({ page }) => {
-    await expect(page.locator('#imprint')).toBeVisible();
-    await expect(page.locator('#privacy')).toBeVisible();
-    await expect(page.locator('#refund')).toBeVisible();
-  });
-
-  test('Imprint section is rendered', async ({ page }) => {
-    await expect(page.locator('#imprint h1, #imprint h2').first()).toBeVisible();
-  });
-
-  test('Privacy section is rendered', async ({ page }) => {
-    await expect(page.locator('#privacy h1, #privacy h2').first()).toBeVisible();
-  });
-
-  test('Refund section is rendered', async ({ page }) => {
-    await expect(page.locator('#refund h1, #refund h2').first()).toBeVisible();
-  });
-
-  test('sections have readable content', async ({ page }) => {
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     for (const id of ['#imprint', '#privacy', '#refund']) {
-      const content = page.locator(`${id} p, ${id} li`);
-      await expect(content.first()).toBeVisible();
+      await expect(page.locator(id)).toBeVisible();
+      await expect(page.locator(`${id} h2`).first()).toBeVisible();
+      await expect(page.locator(`${id} p, ${id} li`).first()).toBeVisible();
     }
+    await expect(page.locator('#privacy')).toContainText('Privacy Policy');
+  });
+
+  test('German pages and legal content do not fall back to English', async ({ page }) => {
+    await page.goto('/de/');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+    await expect(page.locator('h1')).toContainText('Ein QR-Code');
+    await expect(page.locator('.hero-subtitle')).toContainText('Gäste');
+    expect(await page.content()).toContain('Analyse-Cookies');
+
+    await page.goto('/de/pricing');
+    await expect(page.locator('.price-card').nth(0)).toContainText('19 €');
+    await expect(page.locator('.price-card').nth(1)).toContainText('29 €');
+
+    await page.goto('/de/legal');
+    await expect(page.locator('h1')).toContainText('Rechtliches');
+    await expect(page.locator('#privacy')).toContainText('Datenschutzerklärung');
+    await expect(page.locator('#privacy')).not.toContainText('Privacy Policy');
   });
 });
-
