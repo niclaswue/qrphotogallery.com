@@ -4,6 +4,7 @@
 {{define "head"}}
 <link rel="stylesheet" href="/static/css/landing.css">
 <link rel="preload" as="image" href="/static/img/qr-sample.svg">
+<script defer src="/static/js/landing.js"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"QR Photo Gallery","url":{{.BaseURL}},"applicationCategory":"PhotographyApplication","operatingSystem":"Web","offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":{{.StandardPriceEUR}},"highPrice":{{.PremiumPriceEUR}}}}</script>
 {{end}}
 
@@ -92,10 +93,43 @@
                             <div><span class="browser-badge">{{T "landing.example.badge"}}</span><strong>Emma &amp; Louis</strong><small>{{T "landing.example.count"}}</small></div>
                             <span class="browser-download">{{T "landing.example.download"}}</span>
                         </div>
-                        <div class="masonry">
-                            <i class="ph ph1"></i><i class="ph ph2 is-video"></i><i class="ph ph3"></i>
-                            <i class="ph ph4"></i><i class="ph ph5"></i><i class="ph ph6"></i>
-                            <i class="ph ph7 is-video"></i><i class="ph ph8"></i><i class="ph ph9"></i>
+                        <div class="masonry" data-scroll-gallery>
+                            <picture class="gallery-tile ph1">
+                                <source srcset="/static/img/gallery-sample/guests-toast.avif" type="image/avif">
+                                <img src="/static/img/gallery-sample/guests-toast.webp" alt="" width="400" height="295" loading="lazy" decoding="async" fetchpriority="low">
+                            </picture>
+                            <picture class="gallery-tile ph2 is-video">
+                                <source srcset="/static/img/gallery-sample/dance-floor.avif" type="image/avif">
+                                <img src="/static/img/gallery-sample/dance-floor.webp" alt="" width="400" height="375" loading="lazy" decoding="async" fetchpriority="low">
+                            </picture>
+                            <picture class="gallery-tile ph3">
+                                <source srcset="/static/img/gallery-sample/champagne-toast.avif" type="image/avif">
+                                <img src="/static/img/gallery-sample/champagne-toast.webp" alt="" width="400" height="240" loading="lazy" decoding="async" fetchpriority="low">
+                            </picture>
+                            <picture class="gallery-tile ph4">
+                                <source srcset="/static/img/gallery-sample/garden-couple.avif" type="image/avif">
+                                <img src="/static/img/gallery-sample/garden-couple.webp" alt="" width="400" height="335" loading="lazy" decoding="async" fetchpriority="low">
+                            </picture>
+                            <picture class="gallery-tile ph5">
+                                <source srcset="/static/img/gallery-sample/first-dance.avif" type="image/avif">
+                                <img src="/static/img/gallery-sample/first-dance.webp" alt="" width="400" height="260" loading="lazy" decoding="async" fetchpriority="low">
+                            </picture>
+                            <picture class="gallery-tile ph6">
+                                <source srcset="/static/img/gallery-sample/reception-table.avif" type="image/avif">
+                                <img src="/static/img/gallery-sample/reception-table.webp" alt="" width="400" height="355" loading="lazy" decoding="async" fetchpriority="low">
+                            </picture>
+                            <picture class="gallery-tile ph7 is-video">
+                                <source srcset="/static/img/gallery-sample/dance-celebration.avif" type="image/avif">
+                                <img src="/static/img/gallery-sample/dance-celebration.webp" alt="" width="400" height="280" loading="lazy" decoding="async" fetchpriority="low">
+                            </picture>
+                            <picture class="gallery-tile ph8">
+                                <source srcset="/static/img/gallery-sample/table-flowers.avif" type="image/avif">
+                                <img src="/static/img/gallery-sample/table-flowers.webp" alt="" width="400" height="375" loading="lazy" decoding="async" fetchpriority="low">
+                            </picture>
+                            <picture class="gallery-tile ph9">
+                                <source srcset="/static/img/gallery-sample/newlyweds.avif" type="image/avif">
+                                <img src="/static/img/gallery-sample/newlyweds.webp" alt="" width="400" height="250" loading="lazy" decoding="async" fetchpriority="low">
+                            </picture>
                         </div>
                     </div>
                 </div>

@@ -27,6 +27,27 @@ test.describe('Public product pages', () => {
     await expect(page.locator('footer a[href="/legal"]')).toBeVisible();
   });
 
+  test('example gallery uses optimized local images and reveals them on scroll', async ({ page }) => {
+    await page.goto('/');
+    const gallery = page.locator('#example [data-scroll-gallery]');
+    const images = gallery.locator('.gallery-tile img');
+
+    await expect(images).toHaveCount(9);
+    await expect(gallery.locator('source[type="image/avif"]')).toHaveCount(9);
+    expect(await images.evaluateAll((nodes) => nodes.every((node) => {
+      const image = node as HTMLImageElement;
+      return image.loading === 'lazy'
+        && image.decoding === 'async'
+        && image.getAttribute('fetchpriority') === 'low'
+        && image.currentSrc.startsWith(window.location.origin)
+        && image.currentSrc.includes('/static/img/gallery-sample/');
+    }))).toBe(true);
+
+    await expect(gallery).toHaveClass(/is-reveal-ready/);
+    await gallery.scrollIntoViewIfNeeded();
+    await expect(gallery.locator('.gallery-tile').first()).toHaveClass(/is-visible/);
+  });
+
   test('pricing shows the configured personal and commercial offers', async ({ page }) => {
     await page.goto('/pricing');
     const cards = page.locator('.price-card');
