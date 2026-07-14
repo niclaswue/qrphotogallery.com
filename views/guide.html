@@ -1,0 +1,81 @@
+{{define "title"}}{{.Title}}{{end}}
+{{define "description"}}{{.Description}}{{end}}
+{{define "og_type"}}article{{end}}
+{{define "bodyclass"}}guide{{end}}
+{{define "head"}}
+<link rel="stylesheet" href="/static/css/landing.css">
+<link rel="stylesheet" href="/static/css/guides.css">
+{{if .GuideUpdated}}<meta property="article:published_time" content="{{.GuideUpdated}}">
+<meta property="article:modified_time" content="{{.GuideUpdated}}">{{end}}
+{{.GuideJSONLD}}
+{{end}}
+
+{{define "content"}}
+<div class="guide-page">
+    {{template "site_nav" .}}
+    <main>
+        <article class="guide-article">
+            <div class="container-narrow">
+                <nav class="guide-crumbs" aria-label="Breadcrumb">
+                    <a href="{{.LangPrefix}}/">{{T "guides.breadcrumb_home"}}</a>
+                    <span aria-hidden="true">/</span>
+                    <a href="{{.LangPrefix}}/guides">{{T "guides.breadcrumb"}}</a>
+                </nav>
+
+                <header class="guide-head">
+                    <span class="eyebrow">{{if eq .GuideCategory "wedding"}}{{T "guides.category.wedding"}}{{else}}{{T "guides.category.occasion"}}{{end}}</span>
+                    <h1>{{.GuideH1}}</h1>
+                    <p class="guide-lead">{{.GuideIntro}}</p>
+                    {{if .GuideUpdated}}<p class="guide-meta"><time datetime="{{.GuideUpdated}}">{{T "guides.updated"}} {{.GuideUpdated}}</time></p>{{end}}
+                    <div class="guide-head-cta">
+                        <a href="{{.LangPrefix}}/create" class="btn btn-primary">{{T "guides.inline_cta"}} <span aria-hidden="true">→</span></a>
+                        <span class="guide-head-note">{{T "guides.inline_note"}}</span>
+                    </div>
+                </header>
+
+                <div class="guide-body">
+                    {{.GuideBody}}
+                </div>
+
+                {{if .GuideFAQ}}
+                <section class="guide-faq" aria-labelledby="guide-faq-title">
+                    <h2 id="guide-faq-title">{{T "guides.faq_title"}}</h2>
+                    <div class="faq-list">
+                        {{range .GuideFAQ}}<details><summary>{{.Q}}<i>+</i></summary><p>{{.A}}</p></details>{{end}}
+                    </div>
+                </section>
+                {{end}}
+
+                <section class="guide-cta">
+                    <span class="eyebrow">{{T "guides.cta.eyebrow"}}</span>
+                    <h2>{{T "guides.cta.title"}}</h2>
+                    <p>{{T "guides.cta.text"}}</p>
+                    <ul class="guide-cta-list">
+                        <li>{{T "guides.cta.b1"}}</li>
+                        <li>{{T "guides.cta.b2"}}</li>
+                        <li>{{T "guides.cta.b3"}}</li>
+                    </ul>
+                    <a href="{{.LangPrefix}}/create" class="btn btn-primary btn-large">{{printf (T "guides.cta.button") .StandardPrice}} <span aria-hidden="true">→</span></a>
+                    <a href="{{.LangPrefix}}/pricing" class="guide-cta-compare">{{T "guides.cta.compare"}} →</a>
+                </section>
+
+                {{if .Related}}
+                <section class="guide-related" aria-labelledby="guide-related-title">
+                    <h2 id="guide-related-title">{{T "guides.related"}}</h2>
+                    <ul class="guide-related-list">
+                        {{range .Related}}<li>
+                            <a href="{{$.LangPrefix}}/guides/{{.Slug}}">
+                                <strong>{{.Title}}</strong>
+                                <span>{{.Intro}}</span>
+                            </a>
+                        </li>{{end}}
+                    </ul>
+                </section>
+                {{end}}
+            </div>
+        </article>
+    </main>
+    {{template "site_footer" .}}
+</div>
+<script src="/static/js/mobile-nav.js"></script>
+{{end}}

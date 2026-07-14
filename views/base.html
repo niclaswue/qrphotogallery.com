@@ -11,7 +11,7 @@
     <link rel="canonical" href="{{.CanonicalURL}}">
     {{range .HreflangLinks}}<link rel="alternate" hreflang="{{.Lang}}" href="{{.URL}}">
     {{end}}<link rel="alternate" hreflang="x-default" href="{{.DefaultURL}}">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content='{{block "og_type" .}}website{{end}}'>
     <meta property="og:site_name" content='{{T "site.name"}}'>
     <meta property="og:title" content='{{template "title" .}}'>
     <meta property="og:description" content='{{template "description" .}}'>
