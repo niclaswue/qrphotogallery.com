@@ -27,7 +27,7 @@ func withRepoRoot(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chdir(orig) })
 }
 
-var referencedLocaleKey = regexp.MustCompile(`"((?:auth|cookie|create|edit|error|events|footer|forgot_password|landing|legal|login|nav|overview|payment_success|poster|pricing|register|site|upload)\.[a-zA-Z0-9_.%]+)"`)
+var referencedLocaleKey = regexp.MustCompile(`"((?:auth|cookie|create|edit|error|events|footer|forgot_password|guides|landing|legal|login|nav|overview|payment_success|poster|pricing|register|site|upload)\.[a-zA-Z0-9_.%]+)"`)
 
 // TestReferencedLocaleKeysExist closes the gap left by parity alone: two
 // locale files can be identically incomplete. Scan templates and handlers for

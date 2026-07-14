@@ -45,6 +45,10 @@ func Run() {
 		log.Fatalf("could not load legal content: %v", err)
 	}
 
+	if err := loadGuides(); err != nil {
+		log.Fatalf("could not load guides: %v", err)
+	}
+
 	initTemplates()
 
 	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
@@ -88,6 +92,11 @@ func registerRoutes(se *core.ServeEvent) {
 	registerLocalisedGet(r, "/", handleHome)
 	registerLocalisedGet(r, "/pricing", handlePricing)
 	registerLocalisedGet(r, "/legal", handleLegal)
+
+	// SEO content hub. The index and every guide are localised and indexable;
+	// they build topical authority around the product's core queries.
+	registerLocalisedGet(r, "/guides", handleGuideIndex)
+	registerLocalisedGet(r, "/guides/{slug}", handleGuide)
 
 	// Host flow: create an event, then manage it from the overview.
 	registerLocalisedGet(r, "/create", handleCreateStart)
@@ -142,6 +151,12 @@ func registerRoutes(se *core.ServeEvent) {
 	r.GET("/robots.txt", handleRobots)
 	r.GET("/.well-known/security.txt", handleSecurityTxt)
 	r.GET("/security.txt", handleSecurityTxt)
+
+	// AI / answer-engine descriptors. /llms.txt follows the llmstxt.org
+	// convention: a concise, link-first Markdown map of the site for LLMs;
+	// /llms-full.txt carries the same map with short descriptions inline.
+	r.GET("/llms.txt", handleLLMsTxt)
+	r.GET("/llms-full.txt", handleLLMsFullTxt)
 
 	staticHandler := apis.Static(os.DirFS("./pb_public/static"), false)
 	r.GET("/static/{path...}", func(e *core.RequestEvent) error {

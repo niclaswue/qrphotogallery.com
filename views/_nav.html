@@ -7,6 +7,7 @@
                 <span class="logo-mark">{{T "site.name"}}</span>
             </a>
             <div class="nav-actions">
+                <a href="{{.LangPrefix}}/guides" class="nav-link">{{T "nav.guides"}}</a>
                 <a href="{{.LangPrefix}}/pricing" class="nav-link">{{T "nav.pricing"}}</a>
                 {{if .Auth}}
                 <a href="{{.LangPrefix}}/overview" class="nav-link">{{T "nav.account"}}</a>
@@ -32,6 +33,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <nav>
+        <a href="{{.LangPrefix}}/guides" class="nav-mobile-link">{{T "nav.guides"}}</a>
         <a href="{{.LangPrefix}}/pricing" class="nav-mobile-link">{{T "nav.pricing"}}</a>
         {{if .Auth}}
         <a href="{{.LangPrefix}}/overview" class="nav-mobile-link">{{T "nav.account"}}</a>
