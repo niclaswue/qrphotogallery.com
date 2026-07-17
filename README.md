@@ -14,6 +14,8 @@ or guest accounts in the product UI.
 - 100 GB per gallery, up to 2 GB per file, available for one year
 - English and German routes and copy
 - EU-compatible local or S3-backed file storage
+- a live landing-page demo: scan a visitor-specific QR, upload from a phone,
+  and watch the temporary desktop gallery update
 
 The paid offers differ by usage license, not by hiding the core gallery:
 
@@ -77,6 +79,7 @@ Key routes:
 | `/poster/{id}` | printable single-QR PDF |
 | `/qr-image/{id}` | bare gallery QR PNG |
 | `/download/{id}` | host ZIP containing original uploads |
+| `/demo/{id}` | fast, one-hour phone uploader used only by the landing demo |
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for request flow, storage,
 tier gating, and migration details.
@@ -94,7 +97,8 @@ The main product settings live in a few obvious places:
    `favicon.svg`: product imagery and metadata.
 5. `data/legal/*.md`: imprint, privacy, and refund content.
 
-The consolidated pre-launch schema is in `migrations/01_collections.go`.
+The core schema is in `migrations/01_collections.go`; the isolated, expiring
+landing-demo collection is added by `migrations/02_demo_galleries.go`.
 PocketBase pre-creates `users`; the migration extends it idempotently. Before
 launch, edit the consolidated migration and recreate `pb_data/`. Once real
 data exists, use additive numbered migrations.
@@ -129,8 +133,11 @@ docs/                     architecture, adapting, deployment, and design guides
   while ZIP exports use the uploaded originals.
 - **Access control lives in handlers.** The public PocketBase record API is
   locked to superusers.
+- **The landing demo is disposable.** It uses a separate one-photo collection,
+  unlisted handler URLs, and automatic one-hour deletion; it never creates a
+  real event or account.
 - **Translation failures are tests.** Missing referenced locale keys fail the
   Go suite instead of becoming `[key.name]` markers in production.
 - **The whole funnel is exercised.** The browser suite covers registration,
-  gallery creation, QR/poster output, uploads, gallery viewing, ZIP downloads,
-  localization, tier controls, and route security.
+  gallery creation, QR/poster output, the phone-to-desktop live demo, uploads,
+  gallery viewing, ZIP downloads, localization, tier controls, and route security.

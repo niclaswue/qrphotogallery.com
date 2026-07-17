@@ -24,6 +24,8 @@ PocketBase is used as a Go framework rather than as a public backend service:
 
 ```text
 users  1 ──< events  1 ──< prompts  1 ──< uploads
+
+demo_galleries  (isolated one-photo records; expire after one hour)
 ```
 
 The customer-facing model is simply `host → gallery → uploads`. The middle
@@ -41,15 +43,18 @@ or print output.
   flattened by event ID.
 - **uploads** — original media plus optional guest name. HEIC/HEIF files may
   also receive a browser-friendly JPEG in `display`.
+- **demo_galleries** — anonymous landing-page trials. Each opaque record holds
+  scan state and at most one small image; it has no relation to users or real
+  events.
 
 Cross-collection references are text IDs. Handlers join records explicitly,
 which keeps the schema and deletion paths easy to understand.
 
-The pre-launch schema is one consolidated migration,
-`migrations/01_collections.go`. PocketBase creates the `users` collection
-itself, so the migration extends it idempotently. Before launch it is fine to
-edit this migration and recreate `pb_data/`; after launch, use additive
-numbered migrations.
+The core schema is in `migrations/01_collections.go`. PocketBase creates the
+`users` collection itself, so that migration extends it idempotently. The
+production-safe additive `migrations/02_demo_galleries.go` adds the isolated
+demo collection. Continue using additive numbered migrations now that the
+deployed database holds real data.
 
 ## HTML and translation flow
 
@@ -71,6 +76,31 @@ reference so values such as `[create.eyebrow]` fail CI.
 
 Guest pages follow the gallery's stored language, with `?lang=` available for
 QR links. They are `noindex` and omit the site language switcher.
+
+The demo phone page goes one step further: `renderStandalone` parses only
+`views/demo.html`. It loads one small stylesheet and script, with no shared
+navigation, analytics, cookie banner, or HTMX.
+
+## Landing-page live demo
+
+The hero creates an anonymous demo lazily with `POST /api/demo/session`. The
+response contains a visitor-specific QR and relative phone URL. Opening
+`/demo/{id}` marks the phone as connected; the desktop polls the small
+`/demo/{id}/state` JSON endpoint until the upload arrives. The visitor can
+upload one validated image (15 MB maximum) or choose the shared static sample.
+HEIC/HEIF receives a synchronous JPEG display rendition, while downloads
+always return the uploaded original.
+
+The desktop tour moves through QR, empty gallery, photo viewer, and original
+download states. Only after the visitor initiates that download does it show
+an explained, optional handoff to account creation and secure checkout. It
+never redirects automatically, and everything below the hero remains the
+normal browsable landing page.
+
+Demo collection API rules are closed. Files are served only through opaque
+handler URLs with `no-store` responses, and routes reject expired records
+immediately. A ten-minute cron deletes expired records and their
+PocketBase-managed local or S3 files after one hour.
 
 ## The one-QR guest flow
 
@@ -139,9 +169,10 @@ rendition, while ZIP export streams the original file through PocketBase's
 filesystem abstraction. The same code therefore works with local storage and
 S3-compatible storage.
 
-A daily retention job deletes expired gallery records and their stored files.
-Public access also checks the one-year deadline synchronously, closing the gap
-between expiry and the next cleanup pass.
+A daily retention job deletes expired event-gallery records and their stored
+files. A separate ten-minute job removes one-hour demo galleries. Public
+access checks both deadlines synchronously, closing the gap between expiry and
+the next cleanup pass.
 
 ## Print output
 
@@ -171,6 +202,7 @@ generated.
   Typst output when Typst is installed.
 - Playwright covers the full product funnel in English and German, including
   registration, anonymous create handoff, one-QR output, the combined guest
-  page, decodable media rendering, repeat/batch uploads, ZIPs, Commercial
-  controls, legacy redirects, and ownership/security boundaries.
+  page, the two-browser live demo, decodable media rendering, repeat/batch
+  uploads, ZIPs, Commercial controls, legacy redirects, and ownership/security
+  boundaries.
 - CI runs both suites before building the deployment image.

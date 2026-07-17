@@ -147,6 +147,18 @@ func registerRoutes(se *core.ServeEvent) {
 	r.POST("/webhook/lemon-squeezy", handleLemonWebhook)
 	r.GET("/api/user/tier", handleGetUserTier).Bind(apis.RequireAuth())
 
+	// Landing-page live demo. These routes are intentionally isolated from
+	// real events: every opaque demo gallery expires after one hour and holds
+	// at most one small image.
+	r.POST("/api/demo/session", handleCreateDemoGallery)
+	r.GET("/demo/{id}", handleDemoGallery)
+	r.GET("/demo/{id}/state", handleDemoGalleryState)
+	r.GET("/demo/{id}/qr.png", handleDemoGalleryQR)
+	r.POST("/demo/{id}/upload", handleDemoGalleryUpload).Bind(apis.BodyLimit(demoMaxRequestSize))
+	r.POST("/demo/{id}/sample", handleDemoGallerySample)
+	r.GET("/demo/{id}/image", handleDemoGalleryImage)
+	r.GET("/demo/{id}/download", handleDemoGalleryDownload)
+
 	r.GET("/sitemap.xml", handleSitemap)
 	r.GET("/robots.txt", handleRobots)
 	r.GET("/.well-known/security.txt", handleSecurityTxt)

@@ -11,7 +11,9 @@ test.describe('Public product pages', () => {
     expect(response!.status()).toBe(200);
     await expect(page).toHaveTitle(/QR Photo Gallery/i);
     await expect(page.locator('h1')).toContainText(/One QR code/i);
-    await expect(page.locator('.hero-subtitle')).toContainText(/Guests/i);
+    await expect(page.locator('.hero-story li')).toHaveCount(3);
+    await expect(page.locator('.hero-story')).toContainText(/Guests/i);
+    await expect(page.locator('[data-live-demo] [data-demo-panel="ready"]')).toBeVisible();
     await expect(page.locator('.hero-actions a.btn-primary')).toHaveAttribute('href', '/create');
     await expect(page.locator('.how-section .steps article')).toHaveCount(3);
     await expect(page.locator('.feature-grid article')).toHaveCount(6);
@@ -76,7 +78,7 @@ test.describe('Public product pages', () => {
     await page.goto('/de/');
     await expect(page.locator('html')).toHaveAttribute('lang', 'de');
     await expect(page.locator('h1')).toContainText('Ein QR-Code');
-    await expect(page.locator('.hero-subtitle')).toContainText('Gäste');
+    await expect(page.locator('.hero-story')).toContainText('Gäste');
     expect(await page.content()).toContain('Analyse-Cookies');
 
     await page.goto('/de/pricing');

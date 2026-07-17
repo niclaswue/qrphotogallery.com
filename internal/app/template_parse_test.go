@@ -17,4 +17,7 @@ func TestPageTemplatesParse(t *testing.T) {
 			}
 		})
 	}
+	if _, err := getStandaloneTemplate("demo", "en"); err != nil {
+		t.Fatalf("parse standalone demo: %v", err)
+	}
 }

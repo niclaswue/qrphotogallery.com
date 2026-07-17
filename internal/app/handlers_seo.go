@@ -97,6 +97,7 @@ var disallowedPaths = []string{
 	"/download/",
 	"/edit/",
 	"/e/",
+	"/demo/",
 	"/payment",
 	"/_/",
 	"/static/admin.html",

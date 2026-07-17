@@ -45,10 +45,11 @@ npx playwright test 03-gallery.spec.ts       # single file
 - `internal/app/app.go` boots PocketBase and wires every route; handlers in
   `handlers_*.go` by domain; domain logic in `event.go`, gating in
   `helpers.go`.
-- Collections `users` / `events` / `prompts` / `uploads` come from ONE
-  consolidated migration (`migrations/01_collections.go`) — edit it freely
-  pre-launch and delete `pb_data/`; the public record API is locked to
-  superusers, all access control lives in the handlers.
+- Core collections `users` / `events` / `prompts` / `uploads` come from the
+  consolidated migration (`migrations/01_collections.go`); the isolated
+  one-hour landing demo is added by `migrations/02_demo_galleries.go`. The
+  public record API is locked to superusers and access control lives in the
+  handlers.
 - Localised routing: default lang at bare paths, others under `/<lang>/…`;
   templates are cached per page/language with `T`/`THTML` bound before parse;
   locale parity and referenced keys are test-enforced.

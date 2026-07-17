@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+    <meta name="theme-color" content="#11243a">
+    <meta name="robots" content="noindex,nofollow,noarchive">
+    <meta name="description" content='{{T "demo.meta_description"}}'>
+    <title>{{T "demo.title"}}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="preload" href="/static/fonts/jost-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/static/fonts/cormorant-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/static/css/demo.css">
+</head>
+<body>
+    <header class="demo-phone-header">
+        <a href="{{.LangPrefix}}/" class="demo-brand" aria-label='{{T "site.name"}}'>
+            <span class="demo-logo" aria-hidden="true"><i></i><i></i><i></i></span>
+            <strong>{{T "site.name"}}</strong>
+        </a>
+        {{if and (not .Expired) (not .NotFound)}}<span class="demo-timer" data-demo-timer data-expires-at="{{.ExpiresAt}}"><i></i><span>{{T "demo.timer.label"}}</span></span>{{end}}
+    </header>
+
+    {{if .Expired}}
+    <main class="demo-message-page">
+        <span class="demo-message-icon" aria-hidden="true">⌛</span>
+        <h1>{{T "demo.expired.title"}}</h1>
+        <p>{{T "demo.expired.text"}}</p>
+        <a class="demo-button demo-button-primary" href="{{.LangPrefix}}/">{{T "demo.expired.cta"}} <span aria-hidden="true">→</span></a>
+    </main>
+    {{else if .NotFound}}
+    <main class="demo-message-page">
+        <span class="demo-message-icon" aria-hidden="true">?</span>
+        <h1>{{T "demo.not_found.title"}}</h1>
+        <p>{{T "demo.not_found.text"}}</p>
+        <a class="demo-button demo-button-primary" href="{{.LangPrefix}}/">{{T "demo.not_found.cta"}} <span aria-hidden="true">→</span></a>
+    </main>
+    {{else}}
+    <main class="demo-phone-main" data-demo-mobile data-upload-url="{{.UploadURL}}" data-sample-url="{{.SampleURL}}"
+          data-error-no-file='{{T "demo.error.no_file"}}' data-error-too-large='{{T "demo.error.too_large"}}'
+          data-error-bad-format='{{T "demo.error.bad_format"}}' data-error-failed='{{T "demo.error.failed"}}'
+          data-error-connection='{{T "demo.error.connection"}}' data-uploading='{{T "demo.uploading"}}'
+          data-selected='{{T "demo.selected"}}' data-timer-expired='{{T "demo.timer.expired"}}'>
+        <section class="demo-phone-intro">
+            <span class="demo-live-label"><i></i>{{T "demo.live"}}</span>
+            <h1>{{T "demo.heading"}}</h1>
+            <p>{{T "demo.intro"}}</p>
+            <div class="demo-assurances" aria-label='{{T "demo.assurance.label"}}'>
+                <span>↥ {{T "demo.assurance.original"}}</span>
+                <span>◎ {{T "demo.assurance.no_account"}}</span>
+                <span>⌛ {{T "demo.assurance.temporary"}}</span>
+            </div>
+        </section>
+
+        <section class="demo-upload-card" id="demo-upload-card" {{if .HasPhoto}}hidden{{end}}>
+            <div class="demo-card-heading">
+                <span>01</span>
+                <div><h2>{{T "demo.card.title"}}</h2><p>{{T "demo.card.text"}}</p></div>
+            </div>
+            <form id="demo-upload-form" enctype="multipart/form-data" novalidate>
+                <input type="file" id="demo-photo" name="image" accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif" hidden>
+                <label class="demo-picker" for="demo-photo" id="demo-picker">
+                    <span class="demo-picker-icon" aria-hidden="true">↑</span>
+                    <strong>{{T "demo.choose"}}</strong>
+                    <small>{{T "demo.file_hint"}}</small>
+                </label>
+                <div class="demo-selection" id="demo-selection" hidden>
+                    <span aria-hidden="true">▧</span>
+                    <div><strong id="demo-filename"></strong><small id="demo-filesize"></small></div>
+                    <button type="button" id="demo-change" aria-label='{{T "demo.choose"}}'>×</button>
+                </div>
+                <div class="demo-progress" id="demo-progress" hidden><span></span></div>
+                <p class="demo-error" id="demo-error" role="alert" hidden></p>
+                <button class="demo-button demo-button-primary" id="demo-upload" type="submit" disabled>{{T "demo.upload"}} <span aria-hidden="true">→</span></button>
+            </form>
+            <div class="demo-divider"><span>{{T "demo.or"}}</span></div>
+            <button class="demo-button demo-button-ghost" id="demo-sample" type="button">✦ {{T "demo.sample"}}</button>
+            <p class="demo-sample-note">{{T "demo.sample_note"}}</p>
+        </section>
+
+        <section class="demo-success" id="demo-success" aria-live="polite" {{if not .HasPhoto}}hidden{{end}}>
+            <span class="demo-success-mark" aria-hidden="true">✓</span>
+            <span class="demo-live-label"><i></i>{{T "demo.success.live"}}</span>
+            <h2>{{T "demo.success.title"}}</h2>
+            <p>{{T "demo.success.text"}}</p>
+            <img id="demo-success-image" src="{{.ImageURL}}" alt='{{T "demo.success.alt"}}' decoding="async">
+            <a class="demo-button demo-button-primary" id="demo-download" href="{{.DownloadURL}}" download>{{T "demo.success.download"}} <span aria-hidden="true">↓</span></a>
+            <p class="demo-desktop-note"><span aria-hidden="true">↖</span>{{T "demo.success.desktop"}}</p>
+        </section>
+
+        <p class="demo-privacy"><span aria-hidden="true">🔒</span>{{T "demo.privacy"}}</p>
+    </main>
+    <script defer src="/static/js/demo.js"></script>
+    {{end}}
+</body>
+</html>

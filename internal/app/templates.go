@@ -74,6 +74,60 @@ func getPageTemplate(page, lang string) (*template.Template, error) {
 	return tmpl, nil
 }
 
+// getStandaloneTemplate parses a page without views/base.html. It is used by
+// the QR demo's phone surface so a scan doesn't load the full product shell,
+// cookie banner, analytics, or unrelated scripts.
+func getStandaloneTemplate(page, lang string) (*template.Template, error) {
+	cacheKey := lang + ":standalone:" + page
+	pageTemplatesMu.RLock()
+	if t, ok := pageTemplates[cacheKey]; ok {
+		pageTemplatesMu.RUnlock()
+		return t, nil
+	}
+	pageTemplatesMu.RUnlock()
+
+	funcs := template.FuncMap{}
+	for name, fn := range baseFuncs {
+		funcs[name] = fn
+	}
+	funcs["T"] = func(key string) string { return i18n.T(lang, key) }
+	funcs["THTML"] = func(key string) template.HTML { return template.HTML(i18n.T(lang, key)) }
+	tmpl, err := template.New(page + ".html").Funcs(funcs).ParseFiles(fmt.Sprintf("views/%s.html", page))
+	if err != nil {
+		return nil, err
+	}
+	pageTemplatesMu.Lock()
+	pageTemplates[cacheKey] = tmpl
+	pageTemplatesMu.Unlock()
+	return tmpl, nil
+}
+
+func renderStandalone(page, lang string, data map[string]any) string {
+	if data == nil {
+		data = map[string]any{}
+	}
+	if !i18n.IsSupported(lang) {
+		lang = i18n.DefaultLang
+	}
+	data["AppName"] = appConfig.AppName
+	data["Lang"] = lang
+	data["LangPrefix"] = i18n.LangPath(lang)
+	data["BuildTime"] = BuildTime
+	data["BuildCommit"] = BuildCommit
+
+	tmpl, err := getStandaloneTemplate(page, lang)
+	if err != nil {
+		log.Printf("Standalone template parse error for %s: %v", page, err)
+		return "<!doctype html><html><body><h1>Error</h1></body></html>"
+	}
+	var buf bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&buf, page+".html", data); err != nil {
+		log.Printf("Standalone template error for %s: %v", page, err)
+		return "<!doctype html><html><body><h1>Error</h1></body></html>"
+	}
+	return buf.String()
+}
+
 // hreflangLink describes one alternate-language URL exposed via a
 // <link rel="alternate"> element in the page head and the sitemap.
 type hreflangLink struct {

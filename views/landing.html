@@ -3,7 +3,6 @@
 {{define "bodyclass"}}landing{{end}}
 {{define "head"}}
 <link rel="stylesheet" href="/static/css/landing.css">
-<link rel="preload" as="image" href="/static/img/qr-sample.svg">
 <script defer src="/static/js/landing.js"></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"QR Photo Gallery","url":{{.BaseURL}},"applicationCategory":"PhotographyApplication","operatingSystem":"Web","offers":{"@type":"AggregateOffer","priceCurrency":"EUR","lowPrice":{{.StandardPriceEUR}},"highPrice":{{.PremiumPriceEUR}}}}</script>
 {{end}}
@@ -17,27 +16,72 @@
                 <div class="hero-copy">
                     <span class="eyebrow">{{T "landing.hero.eyebrow"}}</span>
                     <h1>{{T "landing.hero.title_lead"}}<br><em>{{T "landing.hero.title_accent"}}</em></h1>
-                    <p class="hero-subtitle">{{T "landing.hero.subtitle"}}</p>
+                    <ol class="hero-story">
+                        <li><span>1</span><div><strong>{{T "landing.hero.step1.title"}}</strong><p>{{T "landing.hero.step1.text"}}</p></div></li>
+                        <li><span>2</span><div><strong>{{T "landing.hero.step2.title"}}</strong><p>{{T "landing.hero.step2.text"}}</p></div></li>
+                        <li><span>3</span><div><strong>{{T "landing.hero.step3.title"}}</strong><p>{{T "landing.hero.step3.text"}}</p></div></li>
+                    </ol>
                     <div class="hero-actions">
                         <a href="{{.LangPrefix}}/create" class="btn btn-primary btn-large">{{T "landing.hero.cta"}} <span aria-hidden="true">→</span></a>
                         <a href="#how" class="text-link">{{T "landing.hero.secondary"}} <span aria-hidden="true">↓</span></a>
                     </div>
                     <p class="hero-trust"><span aria-hidden="true">✓</span> {{T "landing.hero.trust"}}</p>
                 </div>
-                <div class="hero-visual">
-                    <div class="qr-card">
-                        <span class="qr-card-tag">{{T "landing.hero.card_tag"}}</span>
-                        <div class="qr-card-head">
-                            <strong>Emma &amp; Louis</strong>
-                            <small>14 June 2026</small>
+                <div class="hero-visual" data-live-demo data-start-url="/api/demo/session" data-lang="{{.Lang}}" data-error='{{T "landing.demo.error.text"}}' data-expired='{{T "landing.demo.expired.text"}}'>
+                    <div class="live-demo-shell" aria-live="polite">
+                        <div class="live-demo-topbar">
+                            <span class="live-demo-status"><i></i>{{T "landing.demo.live"}}</span>
+                            <div class="live-demo-progress" data-demo-progress aria-label='{{T "landing.demo.progress_label"}}'><i class="is-active"></i><i></i><i></i></div>
                         </div>
-                        <div class="qr-card-code">
-                            <img src="/static/img/qr-sample.svg" alt='{{T "landing.hero.card_alt"}}' width="220" height="220">
+                        <div class="live-demo-browserbar" aria-hidden="true"><span></span><span></span><span></span><small>qrphotogallery.com/demo</small></div>
+
+                        <div class="live-demo-screen live-demo-loading" data-demo-panel="loading">
+                            <span class="live-demo-spinner" aria-hidden="true"></span>
+                            <strong>{{T "landing.demo.loading"}}</strong>
                         </div>
-                        <p class="qr-card-instruction">{{T "landing.hero.card_instruction"}}</p>
-                        <div class="qr-card-foot">
-                            <span class="qr-card-domain">qrphotogallery.com</span>
-                            <small>{{T "landing.hero.card_note"}}</small>
+
+                        <div class="live-demo-screen" data-demo-panel="ready" hidden>
+                            <div class="live-demo-guide"><b>1 / 3</b><span>{{T "landing.demo.ready.guide"}}</span></div>
+                            <h2>{{T "landing.demo.ready.title"}}</h2>
+                            <p>{{T "landing.demo.ready.text"}}</p>
+                            <div class="live-demo-qr"><span class="qr-corner qr-corner-a"></span><span class="qr-corner qr-corner-b"></span><span class="qr-corner qr-corner-c"></span><span class="qr-corner qr-corner-d"></span><img data-demo-qr src="" alt='{{T "landing.demo.ready.alt"}}' width="210" height="210"></div>
+                            <p class="live-demo-scan"><span aria-hidden="true">⌁</span>{{T "landing.demo.ready.scan"}}</p>
+                            <a class="live-demo-direct" data-demo-link href="#" target="_blank" rel="noopener">{{T "landing.demo.ready.open"}} <span aria-hidden="true">↗</span></a>
+                            <small class="live-demo-privacy">🔒 {{T "landing.demo.privacy"}}</small>
+                        </div>
+
+                        <div class="live-demo-screen" data-demo-panel="scanned" hidden>
+                            <div class="live-demo-gallery-head"><div><span>{{T "landing.demo.gallery.eyebrow"}}</span><strong>{{T "landing.demo.gallery.title"}}</strong></div><b><i></i>{{T "landing.demo.gallery.connected"}}</b></div>
+                            <div class="live-demo-empty"><span aria-hidden="true">↑</span><h2>{{T "landing.demo.gallery.empty_title"}}</h2><p>{{T "landing.demo.gallery.empty_text"}}</p></div>
+                            <div class="live-demo-guide live-demo-guide-bottom"><b>2 / 3</b><span>{{T "landing.demo.scanned.guide"}}</span></div>
+                        </div>
+
+                        <div class="live-demo-screen" data-demo-panel="photo" hidden>
+                            <div class="live-demo-gallery-head"><div><span>{{T "landing.demo.gallery.eyebrow"}}</span><strong>{{T "landing.demo.gallery.title"}}</strong></div><b><i></i>{{T "landing.demo.gallery.one_photo"}}</b></div>
+                            <button class="live-demo-photo" type="button" data-demo-photo aria-label='{{T "landing.demo.photo.open"}}'><img data-demo-image src="" alt='{{T "landing.demo.photo.alt"}}'><span>{{T "landing.demo.photo.open"}} <i aria-hidden="true">↗</i></span></button>
+                            <div class="live-demo-guide live-demo-guide-bottom"><b>3 / 3</b><span>{{T "landing.demo.photo.guide"}}</span></div>
+                        </div>
+
+                        <div class="live-demo-screen live-demo-complete" data-demo-panel="complete" hidden>
+                            <span class="live-demo-complete-mark" aria-hidden="true">✓</span>
+                            <span class="eyebrow">{{T "landing.demo.complete.eyebrow"}}</span>
+                            <h2>{{T "landing.demo.complete.title"}}</h2>
+                            <p>{{T "landing.demo.complete.text"}}</p>
+                            <div class="live-demo-offer"><strong>{{.StandardPrice}}</strong><span>{{T "landing.demo.complete.price_note"}}</span></div>
+                            <a href="{{.LangPrefix}}/payment?plan=standard" class="btn btn-primary btn-large btn-block">{{T "landing.demo.complete.cta"}} <span aria-hidden="true">→</span></a>
+                            <small>{{T "landing.demo.complete.note"}}</small>
+                            <a href="#how" class="live-demo-continue">{{T "landing.demo.complete.continue"}} <span aria-hidden="true">↓</span></a>
+                        </div>
+
+                        <div class="live-demo-screen live-demo-error" data-demo-panel="error" hidden>
+                            <span aria-hidden="true">↻</span><h2>{{T "landing.demo.error.title"}}</h2><p data-demo-error>{{T "landing.demo.error.text"}}</p>
+                            <button type="button" class="btn btn-secondary" data-demo-retry>{{T "landing.demo.error.retry"}}</button>
+                        </div>
+
+                        <div class="live-demo-lightbox" data-demo-lightbox role="dialog" aria-modal="true" aria-label='{{T "landing.demo.lightbox.label"}}' hidden>
+                            <button type="button" data-demo-close aria-label='{{T "landing.demo.lightbox.close"}}'>×</button>
+                            <img data-demo-lightbox-image src="" alt='{{T "landing.demo.photo.alt"}}'>
+                            <div><p>{{T "landing.demo.lightbox.hint"}}</p><a class="btn btn-light" data-demo-download href="#" download>↓ {{T "landing.demo.lightbox.download"}}</a></div>
                         </div>
                     </div>
                 </div>
